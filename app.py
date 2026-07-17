@@ -7,7 +7,7 @@ import time  # Ajoute cette ligne avec les autres imports
 import threading
 from flask import Flask, request, jsonify, session
 from flask_socketio import SocketIO, emit
-from data import init_db, save_user, save_all_users, load_users, save_trade, load_trades
+from data.database import init_db, save_user, save_all_users, load_users, save_trade, load_trades
 
 from core import (
     Order, OrderSide, OrderType, OrderStatus,
