@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1784275326,
+    "user_id": 1,
+    "username": "admin",
+    "full_name": "24",
+    "phone": "97588866",
+    "method": "mpesa",
+    "amount": 25,
+    "status": "pending",
+    "date": "2026-07-17T10:02:06.147375"
+  },
+  {
+    "id": 1784275799,
+    "user_id": 1,
+    "username": "admin",
+    "full_name": "ALAM NALP vibe qui",
+    "phone": "97588866",
+    "method": "airtel",
+    "amount": 100,
+    "status": "pending",
+    "date": "2026-07-17T10:09:59.322481"
+  }
+]
