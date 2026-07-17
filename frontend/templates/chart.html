@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Graphique FIX/USD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e8e8e8;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 20px;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0b0b0b; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .logo { font-weight: 700; font-size: 20px; letter-spacing: -0.3px; color: #fff; text-decoration: none; }
+        .logo .accent { color: #0ecb81; }
+        .header-right { display: flex; align-items: center; gap: 6px; }
+        .btn-header {
+            padding: 7px 16px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-header:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+        .btn-header.primary { background: #0ecb81; border-color: #0ecb81; color: #000; }
+        .btn-header.primary:hover { background: #0dd68a; }
+        .btn-header-back {
+            border-color: #0ecb81;
+            color: #0ecb81;
+        }
+        .btn-header-back:hover { background: rgba(14,203,129,0.1); }
+        .header-user { font-size: 13px; color: #888; padding: 0 4px; }
+
+        /* ===== PAGE ===== */
+        .chart-page {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 16px 20px 40px 20px;
+        }
+
+        /* ===== PRICE HEADER ===== */
+        .price-header {
+            padding: 12px 0 16px 0;
+        }
+        .price-header .symbol {
+            font-size: 14px;
+            color: #888;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .price-header .price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .price-header .price {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+            color: #fff;
+        }
+        .price-header .change {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 20px;
+        }
+        .price-header .change.up { color: #0ecb81; background: rgba(14,203,129,0.12); }
+        .price-header .change.down { color: #f6465d; background: rgba(246,70,93,0.12); }
+        .price-header .change-time {
+            font-size: 13px;
+            color: #555;
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        /* ===== TIMEFRAME TABS ===== */
+        .timeframe-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0 12px 0;
+            border-bottom: 1px solid #1a1a1a;
+            flex-wrap: wrap;
+        }
+        .timeframe-tabs .tf-btn {
+            padding: 5px 14px;
+            background: transparent;
+            color: #666;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .timeframe-tabs .tf-btn:hover { color: #ccc; background: #161616; }
+        .timeframe-tabs .tf-btn.active { color: #0ecb81; background: rgba(14,203,129,0.1); }
+
+        /* ===== CHART ===== */
+        .chart-container {
+            height: 400px;
+            background: #0a0a0a;
+            border-radius: 12px;
+            border: 1px solid #1a1a1a;
+            margin: 12px 0 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        #chart { width: 100%; height: 100%; }
+
+        .chart-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #555;
+            font-size: 14px;
+        }
+        .chart-loading .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #1a1a1a;
+            border-top: 2px solid #0ecb81;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== STATS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            padding: 12px 0;
+        }
+        @media (max-width: 768px) {
+            .chart-container { height: 300px; }
+            .price-header .price { font-size: 26px; }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .price-header .price { font-size: 20px; }
+            .timeframe-tabs .tf-btn { padding: 4px 10px; font-size: 11px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .chart-page { padding: 12px 12px 40px 12px; }
+            .chart-container { height: 250px; }
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-item .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .stat-item .stat-value {
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', monospace;
+            margin-top: 2px;
+            color: #fff;
+        }
+        .stat-item .stat-value.green { color: #0ecb81; }
+        .stat-item .stat-value.red { color: #f6465d; }
+        .stat-item .stat-value.gold { color: #f0b90b; }
+    </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <div class="header-left">
+        <a href="/" class="logo"><span class="accent">FIX</span>/USD</a>
+    </div>
+    <div class="header-right">
+        <span class="header-user" id="header_user">--</span>
+        <button class="btn-header btn-header-back" onclick="window.location.href='/'" title="Retour à l'accueil"> ← </button>
+    </div>
+</header>
+
+<div class="chart-page">
+
+    <!-- PRICE HEADER -->
+    <div class="price-header">
+        <div class="symbol">FIX / USD</div>
+        <div class="price-row">
+            <span class="price" id="price_display">--</span>
+            <span class="change" id="change_display">--</span>
+            <span class="change-time" id="time_display">--</span>
+        </div>
+    </div>
+
+    <!-- TIMEFRAME TABS -->
+    <div class="timeframe-tabs">
+        <button class="tf-btn" data-period="1H" onclick="setPeriod('1H', this)">1H</button>
+        <button class="tf-btn active" data-period="1J" onclick="setPeriod('1J', this)">1J</button>
+        <button class="tf-btn" data-period="5J" onclick="setPeriod('5J', this)">5J</button>
+        <button class="tf-btn" data-period="1M" onclick="setPeriod('1M', this)">1M</button>
+        <button class="tf-btn" data-period="6M" onclick="setPeriod('6M', this)">6M</button>
+        <button class="tf-btn" data-period="1AN" onclick="setPeriod('1AN', this)">1A</button>
+        <button class="tf-btn" data-period="5ANS" onclick="setPeriod('5ANS', this)">5A</button>
+        <button class="tf-btn" data-period="MAX" onclick="setPeriod('MAX', this)">MAX</button>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-container">
+        <div id="chart">
+            <div class="chart-loading" id="loading">
+                <div class="spinner"></div>
+                Chargement...
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+        <div class="stat-item">
+            <span class="stat-label">Ouverture</span>
+            <span class="stat-value" id="stat_open">--</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Élevé</span>
+            <span class="stat-value green" id="stat_high">--</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Faible</span>
+            <span class="stat-value red" id="stat_low">--</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Clôture préc.</span>
+            <span class="stat-value gold" id="stat_prev_close">--</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Volume</span>
+            <span class="stat-value" id="stat_volume">--</span>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // ============================================================
+    //  SOCKET
+    // ============================================================
+    const socket = io();
+
+    // ============================================================
+    //  VARIABLES
+    // ============================================================
+    let chart = null;
+    let lineSeries = null;
+    let areaSeries = null;
+    let currentPeriod = '1J';
+    let currentPrice = 0.001;
+    let priceReference = 0.001;
+
+    // ============================================================
+    //  AUTH
+    // ============================================================
+    async function doLogout() {
+        await fetch("/api/logout", {method: "POST"});
+        window.location.href = "/";
+    }
+
+    async function loadUserInfo() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user) {
+                document.getElementById("header_user").textContent = d.user.username;
+                document.getElementById("logout_btn").style.display = "inline-block";
+                if (d.user.role === "admin") {
+                    document.getElementById("admin_btn").style.display = "inline-block";
+                }
+            }
+        } catch(e) {}
+    }
+
+    // ============================================================
+    //  PRIX
+    // ============================================================
+    async function loadPrice() {
+        try {
+            const r = await fetch("/api/market");
+            const d = await r.json();
+            if (d.last_price) {
+                currentPrice = d.last_price;
+                updatePriceDisplay(currentPrice);
+            }
+        } catch(e) {}
+    }
+
+    function updatePriceDisplay(price) {
+        const priceEl = document.getElementById('price_display');
+        const changeEl = document.getElementById('change_display');
+        const timeEl = document.getElementById('time_display');
+
+        priceEl.textContent = price.toFixed(6) + ' $';
+
+        const changePct = ((price - priceReference) / priceReference) * 100;
+        const absChange = price - priceReference;
+
+        if (changePct >= 0) {
+            changeEl.textContent = '+' + changePct.toFixed(2) + '% (+' + absChange.toFixed(6) + ')';
+            changeEl.className = 'change up';
+        } else {
+            changeEl.textContent = changePct.toFixed(2) + '% (' + absChange.toFixed(6) + ')';
+            changeEl.className = 'change down';
+        }
+
+        timeEl.textContent = '• ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    // ============================================================
+    //  CHART
+    // ============================================================
+    function initChart() {
+        const container = document.getElementById('chart');
+        if (!container) return;
+
+        const loading = container.querySelector('.chart-loading');
+        if (loading) loading.remove();
+
+        chart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: container.clientHeight || 400,
+            layout: {
+                background: { color: '#0a0a0a' },
+                textColor: '#666',
+            },
+            grid: {
+                vertLines: { color: '#141414' },
+                horzLines: { color: '#141414' },
+            },
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: false,
+                tickMarkFormatter: (time) => {
+                    const date = new Date(time * 1000);
+                    if (currentPeriod === '1H' || currentPeriod === '1J' || currentPeriod === '5J') {
+                        return date.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+                    }
+                    return date.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
+                }
+            },
+            rightPriceScale: {
+                borderColor: '#1a1a1a',
+                scaleMargins: { top: 0.05, bottom: 0.05 },
+            },
+            handleScroll: false,
+            handleScale: false,
+        });
+
+        // Série ligne
+        lineSeries = chart.addLineSeries({
+            color: '#0ecb81',
+            lineWidth: 2,
+            crosshairMarkerVisible: true,
+            crosshairMarkerRadius: 4,
+            priceLineVisible: true,
+            lastValueVisible: true,
+        });
+
+        // Série zone (remplissage)
+        areaSeries = chart.addAreaSeries({
+            topColor: 'rgba(14, 203, 129, 0.25)',
+            bottomColor: 'rgba(14, 203, 129, 0.02)',
+            lineColor: '#0ecb81',
+            lineWidth: 2,
+            crosshairMarkerVisible: false,
+            priceLineVisible: false,
+            lastValueVisible: false,
+        });
+
+        loadData(currentPeriod);
+
+        window.addEventListener('resize', () => {
+            if (chart) {
+                chart.resize(container.clientWidth, container.clientHeight || 400);
+            }
+        });
+    }
+
+    // ============================================================
+    //  LOAD DATA
+    // ============================================================
+    async function loadData(period) {
+        const loading = document.getElementById('loading');
+        if (loading) loading.style.display = 'flex';
+
+        try {
+            const response = await fetch(`/api/line/${period}`);
+            if (!response.ok) throw new Error('API error: ' + response.status);
+            const data = await response.json();
+
+            if (!data.points || data.points.length === 0) {
+                console.warn('⚠️ Aucune donnée');
+                if (loading) loading.style.display = 'none';
+                return;
+            }
+
+            const points = data.points.map(p => ({
+                time: p.time,
+                value: p.value
+            }));
+
+            if (lineSeries) {
+                lineSeries.setData(points);
+                areaSeries.setData(points);
+                if (chart) {
+                    chart.timeScale().fitContent();
+                    chart.timeScale().scrollToRealTime();
+                }
+            }
+
+            if (data) {
+                document.getElementById('stat_open').textContent = data.open.toFixed(6) + ' $';
+                document.getElementById('stat_high').textContent = data.high.toFixed(6) + ' $';
+                document.getElementById('stat_low').textContent = data.low.toFixed(6) + ' $';
+                document.getElementById('stat_prev_close').textContent = data.prev_close.toFixed(6) + ' $';
+                document.getElementById('stat_volume').textContent = (data.volume || 0).toLocaleString() + ' FIX';
+
+                currentPrice = data.current_price;
+                priceReference = data.open || data.prev_close || currentPrice;
+                updatePriceDisplay(currentPrice);
+            }
+
+            console.log('✅ Données chargées:', points.length, 'points');
+
+        } catch (err) {
+            console.error('❌ Erreur:', err);
+        } finally {
+            if (loading) loading.style.display = 'none';
+        }
+    }
+
+    // ============================================================
+    //  UPDATE REALTIME
+    // ============================================================
+    function updateRealtime() {
+        if (!lineSeries || !chart) return;
+
+        fetch('/api/market')
+            .then(r => r.json())
+            .then(data => {
+                if (data.last_price) {
+                    currentPrice = data.last_price;
+                    updatePriceDisplay(currentPrice);
+                }
+            })
+            .catch(() => {});
+    }
+
+    // ============================================================
+    //  CONTROLES
+    // ============================================================
+    function setPeriod(period, btn) {
+        currentPeriod = period;
+        document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        if (chart) {
+            loadData(period);
+        }
+    }
+
+    // ============================================================
+    //  WEBSOCKET
+    // ============================================================
+    socket.on("connect", () => console.log("WebSocket connecté"));
+    socket.on("market_update", (data) => {
+        if (data.last_price) {
+            currentPrice = data.last_price;
+            updatePriceDisplay(currentPrice);
+        }
+    });
+    socket.on("trade", () => {
+        loadPrice();
+        updateRealtime();
+    });
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    async function init() {
+        await loadUserInfo();
+        await loadPrice();
+
+        setTimeout(() => {
+            if (!chart) {
+                initChart();
+            }
+        }, 300);
+
+        setInterval(() => {
+            updateRealtime();
+            loadPrice();
+        }, 5000);
+    }
+
+    init();
+</script>
+
+</body>
+</html>

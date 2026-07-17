@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: fix-market
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k eventlet app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: RENDER_DISK_PATH
+        value: /data
+    disks:
+      - name: data
+        mountPath: /data
+        sizeGB: 1

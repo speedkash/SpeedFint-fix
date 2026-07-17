@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portefeuille FIX/USD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e8e8e8;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 70px;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0b0b0b; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+        .header {
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .logo { font-weight: 700; font-size: 20px; letter-spacing: -0.3px; color: #fff; text-decoration: none; }
+        .logo .accent { color: #0ecb81; }
+        .header-price {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.5px;
+            font-family: 'Inter', monospace;
+        }
+        .header-right { display: flex; align-items: center; gap: 6px; }
+        .btn-header {
+            padding: 7px 16px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-header:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+        .btn-header.primary { background: #0ecb81; border-color: #0ecb81; color: #000; }
+        .btn-header.primary:hover { background: #0dd68a; }
+        .header-user { font-size: 13px; color: #888; padding: 0 4px; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f0f0f;
+            border-top: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 64px;
+            z-index: 1000;
+            padding: 0 8px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 6px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #555;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            min-width: 60px;
+            background: transparent;
+            border: none;
+            font-family: inherit;
+        }
+        .nav-item .nav-icon { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .nav-item:hover { color: #888; }
+        .nav-item.active { color: #0ecb81; }
+        .nav-item.active .nav-icon { stroke: #0ecb81; }
+
+        .wallet-container {
+            max-width: 550px;
+            margin: 0 auto;
+            padding: 30px 16px 100px 16px;
+        }
+
+        .total-block {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 16px;
+            padding: 30px 20px 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .total-block .total-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .total-block .total-value {
+            font-size: 42px;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: 'Inter', monospace;
+            margin: 6px 0 2px;
+            letter-spacing: -1px;
+        }
+        .total-block .total-change {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .total-block .total-change.up { color: #0ecb81; background: rgba(14,203,129,0.1); }
+        .total-block .total-change.down { color: #f6465d; background: rgba(246,70,93,0.1); }
+
+        .mini-balances {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .mini-balance {
+            background: #0a0a0a;
+            border: 1px solid #161616;
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .mini-balance .label { font-size: 11px; color: #666; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+        .mini-balance .value { font-size: 20px; font-weight: 600; margin-top: 2px; font-family: 'Inter', monospace; }
+        .mini-balance .value.usd { color: #0ecb81; }
+        .mini-balance .value.fix { color: #f0b90b; }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+        .btn-action {
+            padding: 14px 8px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            text-align: center;
+        }
+        .btn-action:active { transform: scale(0.96); }
+        .btn-action.deposit { background: #f0b90b; color: #000; }
+        .btn-action.deposit:hover { background: #f5c81b; }
+        .btn-action.buy { background: #0ecb81; color: #000; }
+        .btn-action.buy:hover { background: #0dd68a; }
+        .btn-action.sell { background: #f6465d; color: #fff; }
+        .btn-action.sell:hover { background: #f75b6f; }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ddd;
+            margin-bottom: 10px;
+            letter-spacing: -0.2px;
+        }
+        .section-title small { font-weight: 400; color: #555; font-size: 12px; margin-left: 8px; }
+
+        .card {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .card-header .title { font-weight: 600; font-size: 13px; color: #ccc; }
+        .card-header .badge { font-size: 11px; color: #666; background: #161616; padding: 2px 12px; border-radius: 20px; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            color: #555;
+            font-weight: 500;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid #161616;
+            background: #0a0a0a;
+        }
+        td { padding: 8px 12px; border-bottom: 1px solid #121212; }
+        tr:last-child td { border-bottom: none; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-muted { color: #666; }
+        .text-green { color: #0ecb81; }
+        .text-red { color: #f6465d; }
+        .text-gold { color: #f0b90b; }
+        .font-mono { font-family: 'Inter', monospace; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .status-badge.open { background: rgba(240,185,11,0.12); color: #f0b90b; }
+        .status-badge.filled { background: rgba(14,203,129,0.12); color: #0ecb81; }
+        .status-badge.cancelled { background: rgba(246,70,93,0.12); color: #f6465d; }
+        .status-badge.partial { background: rgba(55,114,255,0.12); color: #3772ff; }
+
+        .btn-sm {
+            padding: 3px 12px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-sm:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+        .btn-sm.danger:hover { border-color: #f6465d; color: #f6465d; background: rgba(246,70,93,0.08); }
+
+        .empty-state { padding: 30px 16px; text-align: center; color: #555; font-size: 13px; }
+
+        @media (max-width: 768px) {
+            .header { padding: 12px 14px; }
+            .header-price { font-size: 18px; }
+            .btn-header { padding: 5px 12px; font-size: 12px; }
+            .wallet-container { padding: 12px 10px 100px 10px; }
+        }
+        @media (max-width: 480px) {
+            .header-price { font-size: 15px; }
+            .logo { font-size: 16px; }
+            .total-block .total-value { font-size: 32px; }
+            .mini-balance .value { font-size: 17px; }
+            .action-buttons { gap: 6px; }
+            .btn-action { font-size: 12px; padding: 12px 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <a href="/dashboard" class="logo"><span class="accent">FIX</span>/USD</a>
+        <span class="header-price" id="ticker_price">--</span>
+    </div>
+    <div class="header-right">
+        <span class="header-user" id="header_user">--</span>
+        <button class="btn-header" onclick="window.location.href='/admin'" id="admin_btn" style="display:none;">Admin</button>
+        <button class="btn-header primary" onclick="doLogout()">Déconnexion</button>
+    </div>
+</header>
+
+<div class="wallet-container">
+
+    <div class="total-block">
+        <div class="total-label">Valeur totale du portefeuille</div>
+        <div class="total-value" id="totalValue">--</div>
+        <div class="total-change" id="totalChange">0.00%</div>
+    </div>
+
+    <div class="mini-balances">
+        <div class="mini-balance">
+            <div class="label">USD</div>
+            <div class="value usd" id="walletUsd">--</div>
+        </div>
+        <div class="mini-balance">
+            <div class="label">FIX</div>
+            <div class="value fix" id="walletFix">--</div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn-action deposit" onclick="window.location.href='/deposit'">+ Dépôt</button>
+        <button class="btn-action buy" onclick="window.location.href='/withdraw'">Retrait</button>
+        <button class="btn-action sell" onclick="window.location.href='/transfer'">Transférer</button>
+    </div>
+
+    <div class="section-title">
+        Ordres actifs
+        <small id="openOrdersCount">0</small>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span class="title">En attente</span>
+            <span class="badge" id="openOrdersBadge">0</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Prix</th>
+                        <th class="text-right">Qté</th>
+                        <th class="text-right">Restant</th>
+                        <th>Statut</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="openOrdersBody">
+                    <tr><td colspan="6"><div class="empty-state">Aucun ordre actif</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section-title">
+        Historique des transactions
+        <small id="tradesCount">0</small>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span class="title">Trades exécutés</span>
+            <span class="badge" id="tradesBadge">0</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Heure</th>
+                        <th class="text-right">Prix</th>
+                        <th class="text-right">Qté</th>
+                        <th class="text-right">Total</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody id="tradesBody">
+                    <tr><td colspan="5"><div class="empty-state">Aucune transaction</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<nav class="bottom-nav">
+    <a href="/" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M3 12L5 10.5M21 12L19 10.5M12 3V5M12 21V19M9 8L12 11L15 8M9 16L12 13L15 16M5 10.5L12 3L19 10.5V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V10.5Z"/>
+        </svg>
+        <span>Accueil</span>
+    </a>
+    <a href="/dashboard" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <rect x="3" y="6" width="4" height="12"/>
+            <rect x="10" y="2" width="4" height="16"/>
+            <rect x="17" y="10" width="4" height="8"/>
+        </svg>
+        <span>Marché</span>
+    </a>
+    <a href="/wallet" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+            <circle cx="18" cy="14" r="1.5" fill="currentColor"/>
+        </svg>
+        <span>Portefeuille</span>
+    </a>
+</nav>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // ============================================================
+    //  SOCKET
+    // ============================================================
+    const socket = io();
+
+    // ============================================================
+    //  COMMUN
+    // ============================================================
+    let currentUser = null;
+    let currentPrice = 0;
+    let totalReference = null;
+
+    async function doLogout() {
+        await fetch("/api/logout", {method: "POST"});
+        window.location.href = "/";
+    }
+
+    async function loadUserInfo() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user) {
+                currentUser = d.user;
+                document.getElementById("header_user").textContent = d.user.username;
+                if (d.user.role === "admin") {
+                    document.getElementById("admin_btn").style.display = "inline-block";
+                }
+                return d.user;
+            }
+        } catch(e) {}
+        return null;
+    }
+
+    // ============================================================
+    //  PRIX
+    // ============================================================
+    async function loadPrice() {
+        try {
+            const r = await fetch("/api/market");
+            const d = await r.json();
+            if (d.last_price) {
+                currentPrice = d.last_price;
+                document.getElementById("ticker_price").textContent = Number(currentPrice).toFixed(6) + " $";
+                return currentPrice;
+            }
+        } catch(e) {}
+        return null;
+    }
+
+    // ============================================================
+    //  WALLET
+    // ============================================================
+    async function refreshWallet() {
+        try {
+            const [marketR, meR] = await Promise.all([
+                fetch("/api/market"),
+                fetch("/api/me")
+            ]);
+            const market = await marketR.json();
+            const me = await meR.json();
+
+            if (market.last_price) {
+                currentPrice = market.last_price;
+                document.getElementById("ticker_price").textContent = Number(currentPrice).toFixed(6) + " $";
+            }
+
+            if (me.success && me.user.portfolio) {
+                const p = me.user.portfolio;
+                const cash = p.available_cash || p.cash || 0;
+                const fix = p.available_assets?.FIX || 0;
+
+                document.getElementById("walletUsd").textContent = Number(cash).toFixed(2) + " USD";
+                document.getElementById("walletFix").textContent = fix.toLocaleString() + " FIX";
+
+                const fixValue = fix * currentPrice;
+                const total = cash + fixValue;
+
+                document.getElementById("totalValue").textContent = total.toFixed(2) + " USD";
+
+                // ===== VARIATION =====
+                let totalRef = null;
+                try {
+                    const key = 'fix_total_reference_' + (currentUser?.username || 'default');
+                    const ref = localStorage.getItem(key);
+                    if (ref) totalRef = parseFloat(ref);
+                } catch(e) {}
+
+                if (totalRef === null) {
+                    try {
+                        const key = 'fix_total_reference_' + (currentUser?.username || 'default');
+                        localStorage.setItem(key, total.toString());
+                    } catch(e) {}
+                    totalRef = total;
+                }
+
+                // AUTO-RESET si écart > 50%
+                if (totalRef > 0 && Math.abs((total - totalRef) / totalRef) > 0.5) {
+                    try {
+                        const key = 'fix_total_reference_' + (currentUser?.username || 'default');
+                        localStorage.setItem(key, total.toString());
+                    } catch(e) {}
+                    totalRef = total;
+                }
+
+                const changeEl = document.getElementById("totalChange");
+                if (totalRef > 0) {
+                    const change = ((total - totalRef) / totalRef) * 100;
+                    if (change >= 0) {
+                        changeEl.textContent = "+" + change.toFixed(2) + "%";
+                        changeEl.className = "total-change up";
+                    } else {
+                        changeEl.textContent = change.toFixed(2) + "%";
+                        changeEl.className = "total-change down";
+                    }
+                } else {
+                    changeEl.textContent = "0.00%";
+                    changeEl.className = "total-change up";
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    // ============================================================
+    //  ORDRES & TRADES (CORRIGÉ)
+    // ============================================================
+    async function refreshOpenOrders() {
+        try {
+            const r = await fetch("/api/my/orders");
+            const d = await r.json();
+            const orders = d.orders || [];
+
+            document.getElementById("openOrdersCount").textContent = orders.length;
+            document.getElementById("openOrdersBadge").textContent = orders.length;
+
+            const tbody = document.getElementById("openOrdersBody");
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">Aucun ordre actif</div></td></tr>`;
+                return;
+            }
+
+            let html = "";
+            for (const o of orders) {
+                const sideLabel = o.side === "buy" ? "Achat" : "Vente";
+                const sideClass = o.side === "buy" ? "text-green" : "text-red";
+                const statusMap = {
+                    "open": "En attente",
+                    "filled": "Exécuté",
+                    "cancelled": "Annulé",
+                    "partial": "Partiel"
+                };
+                const statusLabel = statusMap[o.status] || o.status;
+                const statusClass = o.status === "open" ? "open" : 
+                                   o.status === "filled" ? "filled" : 
+                                   o.status === "cancelled" ? "cancelled" : "partial";
+
+                html += `<tr>
+                    <td class="${sideClass}">${sideLabel}</td>
+                    <td class="font-mono">${Number(o.price).toFixed(6)}</td>
+                    <td class="text-right font-mono">${o.quantity.toLocaleString()}</td>
+                    <td class="text-right font-mono">${(o.remaining_qty || o.quantity).toLocaleString()}</td>
+                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                    <td class="text-center">
+                        <button class="btn-sm danger" onclick="cancelOrder('${o.order_id}')">Annuler</button>
+                    </td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+        } catch (e) { /* ignore */ }
+    }
+
+    // 🔥 CORRECTION : Affichage des trades avec l'heure réelle
+    async function refreshTrades() {
+        try {
+            const r = await fetch("/api/my/trades");
+            const d = await r.json();
+            const trades = d.trades || [];
+
+            document.getElementById("tradesCount").textContent = trades.length;
+            document.getElementById("tradesBadge").textContent = trades.length;
+
+            const tbody = document.getElementById("tradesBody");
+            if (trades.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">Aucune transaction</div></td></tr>`;
+                return;
+            }
+
+            let html = "";
+            // 🔥 AFFICHER SEULEMENT LES 10 DERNIERS TRADES
+            const tradesToShow = trades.slice().reverse().slice(0, 10);
+            for (const t of tradesToShow) {
+                const isBuy = t.buyer === currentUser.username;
+                const typeClass = isBuy ? "text-green" : "text-red";
+                const typeLabel = isBuy ? "Achat" : "Vente";
+                
+                // 🔥 CORRECTION : Utiliser le timestamp réel du trade
+                let timeStr = "---";
+                if (t.timestamp) {
+                    try {
+                        const date = new Date(t.timestamp);
+                        if (!isNaN(date.getTime())) {
+                            timeStr = date.toLocaleTimeString("fr-FR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit"
+                            });
+                        }
+                    } catch(e) {
+                        timeStr = "---";
+                    }
+                }
+
+                html += `<tr>
+                    <td class="text-muted">${timeStr}</td>
+                    <td class="text-right font-mono">${Number(t.price).toFixed(6)}</td>
+                    <td class="text-right font-mono">${t.quantity.toLocaleString()}</td>
+                    <td class="text-right font-mono">${Number(t.total || t.price * t.quantity).toFixed(4)}</td>
+                    <td class="${typeClass}">${typeLabel}</td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+        } catch (e) { 
+            console.error("Erreur refreshTrades:", e);
+        }
+    }
+
+    async function cancelOrder(orderId) {
+        if (!confirm("Annuler cet ordre ?")) return;
+        try {
+            const r = await fetch(`/api/order/${orderId}/cancel`, { method: "POST" });
+            const d = await r.json();
+            if (d.success) {
+                await refreshAll();
+            } else {
+                alert("Erreur : " + d.error);
+            }
+        } catch (e) {
+            alert("Erreur réseau");
+        }
+    }
+
+    async function refreshAll() {
+        await Promise.all([
+            refreshWallet(),
+            refreshOpenOrders(),
+            refreshTrades()
+        ]);
+    }
+
+    // ============================================================
+    //  WEBSOCKET
+    // ============================================================
+    socket.on("connect", () => {
+        console.log("WebSocket connecté");
+    });
+
+    socket.on("market_update", (data) => {
+        if (data.last_price) {
+            currentPrice = data.last_price;
+            document.getElementById("ticker_price").textContent = Number(currentPrice).toFixed(6) + " $";
+            refreshWallet();
+        }
+    });
+
+    socket.on("trade", () => {
+        loadPrice();
+        refreshWallet();
+        refreshTrades();  // ← Mettre à jour les trades en temps réel
+    });
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    async function init() {
+        currentUser = await loadUserInfo();
+        if (!currentUser) { window.location.href = "/"; return; }
+        
+        await loadPrice();
+        await refreshAll();
+
+        setInterval(() => {
+            loadPrice();
+            refreshWallet();
+        }, 3000);
+    }
+
+    init();
+</script>
+
+</body>
+</html>

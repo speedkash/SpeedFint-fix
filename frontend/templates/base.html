@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Marché FIX</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 10px 16px;
+            height: 56px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 18px;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .logo svg { width: 22px; height: 22px; }
+        .logo span { color: #f0b90b; }
+        .pair { color: #aaa; font-size: 13px; font-weight: 500; }
+        .ticker-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        .ticker-change {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .ticker-change.up { color: #0ecb81; background: rgba(14,203,129,0.1); }
+        .ticker-change.down { color: #f6465d; background: rgba(246,70,93,0.1); }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .btn-sm {
+            padding: 6px 12px;
+            border: 1px solid #222;
+            background: #111;
+            color: #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .btn-sm:hover { background: #1a1a1a; color: #fff; }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            background: #0a0a0a;
+            border-top: 1px solid #1a1a1a;
+            z-index: 100;
+            height: 56px;
+        }
+        .bottom-nav a {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 500;
+            gap: 3px;
+            transition: all 0.15s;
+        }
+        .bottom-nav a svg { width: 20px; height: 20px; }
+        .bottom-nav a.active { color: #f0b90b; }
+
+        /* CONTENT */
+        .content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+        /* UTILS */
+        .hidden { display: none !important; }
+        .text-mono { font-family: 'Courier New', monospace; }
+        .text-center { text-align: center; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <a href="/dashboard" class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                Marché<span>FIX</span>
+            </a>
+            <span class="pair">FIX/USD</span>
+            <span class="ticker-price" id="ticker_price">--</span>
+            <span class="ticker-change" id="ticker_change">--</span>
+        </div>
+        <div class="header-right">
+            <span style="color:#888;font-size:12px;" id="header_user">--</span>
+            <a href="/" class="btn-sm" onclick="doLogout(event)">Déco</a>
+        </div>
+    </header>
+
+    <!-- CONTENU -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav">
+    <a href="/" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M3 12L5 10.5M21 12L19 10.5M12 3V5M12 21V19M9 8L12 11L15 8M9 16L12 13L15 16M5 10.5L12 3L19 10.5V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V10.5Z"/>
+        </svg>
+        <span>Accueil</span>
+    </a>
+    <a href="/dashboard" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <rect x="3" y="6" width="4" height="12"/>
+            <rect x="10" y="2" width="4" height="16"/>
+            <rect x="17" y="10" width="4" height="8"/>
+        </svg>
+        <span>Marché</span>
+    </a>
+    <a href="/wallet" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+            <circle cx="18" cy="14" r="1.5" fill="currentColor"/>
+        </svg>
+        <span>Portefeuille</span>
+    </a>
+</nav>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let currentUser = null;
+
+        socket.on("market_update", (data) => {
+            if (data.last_price) {
+                document.getElementById("ticker_price").textContent = Number(data.last_price).toFixed(6) + " $";
+            }
+        });
+        socket.on("book_update", (data) => {
+            if (data.last_price) {
+                document.getElementById("ticker_price").textContent = Number(data.last_price).toFixed(6) + " $";
+            }
+        });
+
+        async function checkAuth() {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success) {
+                currentUser = d.user;
+                document.getElementById("header_user").textContent = currentUser.username;
+            } else if (window.location.pathname !== "/") {
+                window.location.href = "/";
+            }
+        }
+
+        async function doLogout(e) {
+            if (e) e.preventDefault();
+            await fetch("/api/logout", {method: "POST"});
+            window.location.href = "/";
+        }
+
+        checkAuth();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

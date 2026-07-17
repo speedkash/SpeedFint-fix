@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dépôt FIX/USD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e8e8e8;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 70px;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0b0b0b; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+        .header {
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .logo { font-weight: 700; font-size: 20px; letter-spacing: -0.3px; color: #fff; text-decoration: none; }
+        .logo .accent { color: #0ecb81; }
+        .header-right { display: flex; align-items: center; gap: 6px; }
+        .btn-header {
+            padding: 7px 16px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-header:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+        .btn-header.primary { background: #0ecb81; border-color: #0ecb81; color: #000; }
+        .btn-header.primary:hover { background: #0dd68a; }
+        .btn-header .icon { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .header-user { font-size: 13px; color: #888; padding: 0 4px; }
+
+        .back-btn-wrapper { padding: 0 16px 8px 16px; }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 40px;
+            height: 40px;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+        .back-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 16px 16px 100px 16px;
+        }
+
+        .card {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 16px;
+            padding: 24px 20px 20px;
+            margin-bottom: 16px;
+        }
+        .card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h2 .icon { width: 24px; height: 24px; stroke: #f0b90b; stroke-width: 1.8; fill: none; }
+        .card .sub {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 16px;
+            padding-left: 34px;
+        }
+
+        .payment-numbers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 480px) {
+            .payment-numbers { grid-template-columns: 1fr; }
+        }
+
+        .payment-number {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: border-color 0.2s;
+            cursor: pointer;
+        }
+        .payment-number:hover { border-color: #0ecb81; }
+        .payment-number .method-icon { width: 28px; height: 28px; stroke: #f0b90b; stroke-width: 1.5; fill: none; flex-shrink: 0; }
+        .payment-number .method-info { flex: 1; display: flex; flex-direction: column; }
+        .payment-number .method-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .payment-number .method-number {
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', monospace;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .payment-number .copy-btn {
+            background: transparent;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            padding: 4px 6px;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .payment-number .copy-btn svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.8; fill: none; }
+        .payment-number .copy-btn:hover { color: #0ecb81; }
+
+        .info-box {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .info-box .icon { width: 20px; height: 20px; stroke: #f0b90b; stroke-width: 1.8; fill: none; flex-shrink: 0; margin-top: 1px; }
+        .info-box .text { font-size: 12px; color: #888; line-height: 1.5; }
+        .info-box .text strong { color: #fff; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        .form-group label .required { color: #f6465d; margin-left: 2px; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #0ecb81; }
+        .form-group input::placeholder { color: #444; }
+        .form-group select option { background: #0f0f0f; }
+        .form-group .hint { font-size: 11px; color: #555; margin-top: 3px; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn .icon { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .btn-gold { background: #f0b90b; color: #000; }
+        .btn-gold:hover { background: #f5c81b; }
+        .btn-green { background: #0ecb81; color: #000; }
+        .btn-green:hover { background: #0dd68a; }
+        .btn-back {
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            color: #aaa;
+        }
+        .btn-back:hover { background: #1a1a1a; color: #fff; }
+
+        .msg {
+            text-align: center;
+            font-size: 13px;
+            margin-top: 10px;
+            min-height: 18px;
+            font-weight: 500;
+        }
+        .msg.error { color: #f6465d; }
+        .msg.success { color: #0ecb81; }
+
+        .hidden { display: none !important; }
+
+        /* ===== SUCCESS ===== */
+        .success-icon { width: 56px; height: 56px; stroke: #0ecb81; stroke-width: 1.5; fill: none; margin: 0 auto 10px; display: block; }
+        .success-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0ecb81;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .success-sub {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        .success-details {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+        .success-details .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #121212;
+        }
+        .success-details .detail-row:last-child { border-bottom: none; }
+        .success-details .detail-row .label { color: #666; }
+        .success-details .detail-row .value { color: #fff; font-weight: 500; }
+        .success-details .detail-row .value.gold { color: #f0b90b; }
+
+        .bottom-actions { display: flex; gap: 10px; }
+        .bottom-actions .btn { flex: 1; }
+
+        /* ===== HISTORIQUE ===== */
+        .history-section { margin-top: 8px; }
+        .history-section .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ccc;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-section .section-title .see-all {
+            font-size: 12px;
+            color: #0ecb81;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .history-section .section-title .see-all svg { width: 14px; height: 14px; stroke: #0ecb81; stroke-width: 2; fill: none; }
+        .history-section .section-title .see-all:hover { text-decoration: underline; }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            background: #0a0a0a;
+            border: 1px solid #161616;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .history-item:hover { border-color: #2a2a2a; background: #0f0f0f; }
+        .history-item .h-left { display: flex; flex-direction: column; }
+        .history-item .h-amount { font-weight: 600; font-size: 14px; }
+        .history-item .h-amount.negative { color: #f6465d; }
+        .history-item .h-date { font-size: 11px; color: #555; }
+        .history-item .h-status {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .history-item .h-status.completed { background: rgba(14,203,129,0.12); color: #0ecb81; }
+        .history-item .h-status.pending { background: rgba(240,185,11,0.12); color: #f0b90b; }
+        .history-item .h-status.failed { background: rgba(246,70,93,0.12); color: #f6465d; }
+        .history-empty {
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+            padding: 16px 0;
+        }
+
+        /* ===== MODAL DETAIL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 20px 20px 16px;
+            max-width: 380px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-content h3 .icon { width: 22px; height: 22px; stroke: #f0b90b; stroke-width: 1.8; fill: none; }
+        .modal-content .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #121212;
+            font-size: 13px;
+        }
+        .modal-content .detail-row .label { color: #666; }
+        .modal-content .detail-row .value { color: #fff; font-weight: 500; }
+        .modal-content .detail-row .value.gold { color: #f0b90b; }
+        .modal-content .detail-row .value.red { color: #f6465d; }
+        .modal-close {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 10px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .modal-close svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .modal-close:hover { background: #1a1a1a; color: #fff; }
+
+        /* ===== MODAL HISTORIQUE COMPLET ===== */
+        .modal-content .history-full-list { max-height: 280px; overflow-y: auto; }
+        .modal-content .history-full-list .h-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #121212;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .modal-content .history-full-list .h-item:hover { background: #161616; }
+        .modal-content .history-full-list .h-item .h-amount-small { font-weight: 500; }
+        .modal-content .history-full-list .h-item .h-amount-small.negative { color: #f6465d; }
+        .modal-content .history-full-list .h-item .h-amount-small.positive { color: #0ecb81; }
+        .modal-content .history-full-list .h-item .h-date-small { color: #555; font-size: 10px; }
+        .modal-content .history-full-list .h-item .h-status-small { font-size: 10px; padding: 1px 8px; border-radius: 10px; }
+
+        @media (max-width: 480px) {
+            .container { padding: 12px 12px 100px 12px; }
+            .card { padding: 18px 14px 16px; }
+            .card h2 { font-size: 18px; }
+            .card h2 .icon { width: 20px; height: 20px; }
+            .card .sub { padding-left: 0; }
+            .payment-numbers { grid-template-columns: 1fr; }
+            .bottom-actions { flex-direction: column; }
+            .success-icon { width: 44px; height: 44px; }
+            .success-title { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <a href="/wallet" class="logo"><span class="accent">FIX</span>/USD</a>
+    </div>
+    <div class="header-right">
+        <span class="header-user" id="header_user">--</span>
+        <button class="btn-header primary" onclick="doLogout()">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Déconnexion
+        </button>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="back-btn-wrapper">
+        <a href="/wallet" class="back-btn" title="Retour">
+            <svg viewBox="0 0 24 24">
+                <path d="M19 12H5"/>
+                <path d="M12 19l-7-7 7-7"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- ===== FORMULAIRE DE DÉPÔT ===== -->
+    <div id="formSection">
+        <div class="card">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                Dépôt USD
+            </h2>
+            <p class="sub">Ajoutez des USD à votre compte</p>
+
+            <div class="info-box">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span class="text">
+                    <strong>Instructions :</strong> Effectuez un paiement vers l'un des numéros ci-dessous, puis remplissez le formulaire. Votre compte sera crédité en <strong>USD</strong> après validation.
+                </span>
+            </div>
+
+            <!-- ===== NUMÉROS DE PAIEMENT ===== -->
+            <div class="payment-numbers">
+                <div class="payment-number" onclick="copyNumber('+2439XXXXXXXX')">
+                    <svg class="method-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    <div class="method-info">
+                        <span class="method-name">Airtel Money</span>
+                        <span class="method-number" id="num_airtel">+2439XXXXXXXX</span>
+                    </div>
+                    <button class="copy-btn" onclick="event.stopPropagation();copyNumber('+2439XXXXXXXX')">
+                        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+                <div class="payment-number" onclick="copyNumber('+24389XXXXXXX')">
+                    <svg class="method-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    <div class="method-info">
+                        <span class="method-name">Orange Money</span>
+                        <span class="method-number" id="num_orange">+24389XXXXXXX</span>
+                    </div>
+                    <button class="copy-btn" onclick="event.stopPropagation();copyNumber('+24389XXXXXXX')">
+                        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+                <div class="payment-number" onclick="copyNumber('+24381XXXXXXX')">
+                    <svg class="method-icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    <div class="method-info">
+                        <span class="method-name">M-Pesa</span>
+                        <span class="method-number" id="num_mpesa">+24381XXXXXXX</span>
+                    </div>
+                    <button class="copy-btn" onclick="event.stopPropagation();copyNumber('+24381XXXXXXX')">
+                        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+                <div class="payment-number" onclick="copyNumber('+24397XXXXXXX')">
+                    <svg class="method-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <div class="method-info">
+                        <span class="method-name">Virement bancaire</span>
+                        <span class="method-number" id="num_bank">+24397XXXXXXX</span>
+                    </div>
+                    <button class="copy-btn" onclick="event.stopPropagation();copyNumber('+24397XXXXXXX')">
+                        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== FORMULAIRE ===== -->
+            <div class="form-group">
+                <label>Nom complet <span class="required">*</span></label>
+                <input type="text" id="fullName" placeholder="Jean Dupont" required>
+            </div>
+
+            <div class="form-group">
+                <label>Username SpeedFint <span class="required">*</span></label>
+                <input type="text" id="usernameSpeed" placeholder="Votre nom d'utilisateur" required>
+            </div>
+
+            <div class="form-group">
+                <label>Numéro de téléphone <span class="required">*</span></label>
+                <input type="tel" id="phoneNumber" placeholder="+243 8X XXX XXXX" required>
+            </div>
+
+            <div class="form-group">
+                <label>Méthode de paiement <span class="required">*</span></label>
+                <select id="paymentMethod" required>
+                    <option value="">-- Sélectionnez --</option>
+                    <option value="airtel">Airtel Money</option>
+                    <option value="orange">Orange Money</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="bank">Virement bancaire</option>
+                    <option value="wave">Wave</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Montant (USD) <span class="required">*</span></label>
+                <input type="number" id="depositAmount" placeholder="0.00" step="0.01" min="1" required>
+                <div class="hint">Montant minimum : 1.00 USD</div>
+            </div>
+
+            <button class="btn btn-gold" onclick="submitDeposit()">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg>
+                Valider la demande
+            </button>
+            <div class="msg" id="formMsg"></div>
+        </div>
+
+        <!-- ===== HISTORIQUE DES DÉPÔTS ===== -->
+        <div class="history-section">
+            <div class="section-title">
+                Historique des dépôts
+                <span class="see-all" onclick="openFullHistoryModal()">
+                    Voir tout
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
+            </div>
+            <div id="historyList"><div class="history-empty">Aucun dépôt effectué</div></div>
+        </div>
+    </div>
+
+    <!-- ===== PAGE DE CONFIRMATION ===== -->
+    <div id="successSection" class="hidden">
+        <div class="card">
+            <svg class="success-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div class="success-title">Demande envoyée !</div>
+            <div class="success-sub">
+                Votre demande de dépôt a été enregistrée.<br>
+                Notre équipe validera votre paiement dans les plus brefs délais.
+            </div>
+
+            <div class="success-details" id="successDetails">
+                <div class="detail-row"><span class="label">Nom complet</span><span class="value" id="s_name">--</span></div>
+                <div class="detail-row"><span class="label">Username</span><span class="value" id="s_username">--</span></div>
+                <div class="detail-row"><span class="label">Méthode</span><span class="value" id="s_method">--</span></div>
+                <div class="detail-row"><span class="label">Montant</span><span class="value gold" id="s_amount">--</span></div>
+                <div class="detail-row"><span class="label">Statut</span><span class="value" style="color:#f0b90b;">⏳ En attente</span></div>
+            </div>
+
+            <div class="bottom-actions">
+                <button class="btn btn-back" onclick="window.location.href='/wallet'">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                    Portefeuille
+                </button>
+                <button class="btn btn-green" onclick="window.location.href='/deposit'">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                    Nouveau dépôt
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== MODAL DETAIL ===== -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+        <h3>
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Détail du dépôt
+        </h3>
+        <div id="detailContent">
+            <div class="detail-row"><span class="label">ID</span><span class="value" id="d_id">--</span></div>
+            <div class="detail-row"><span class="label">Nom complet</span><span class="value" id="d_name">--</span></div>
+            <div class="detail-row"><span class="label">Username</span><span class="value" id="d_username">--</span></div>
+            <div class="detail-row"><span class="label">Téléphone</span><span class="value" id="d_phone">--</span></div>
+            <div class="detail-row"><span class="label">Méthode</span><span class="value" id="d_method">--</span></div>
+            <div class="detail-row"><span class="label">Montant</span><span class="value gold" id="d_amount">--</span></div>
+            <div class="detail-row"><span class="label">Statut</span><span class="value" id="d_status">--</span></div>
+            <div class="detail-row"><span class="label">Date</span><span class="value" id="d_date">--</span></div>
+        </div>
+        <button class="modal-close" onclick="closeDetailModal()">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Fermer
+        </button>
+    </div>
+</div>
+
+<!-- ===== MODAL HISTORIQUE COMPLET ===== -->
+<div class="modal-overlay" id="fullHistoryModal">
+    <div class="modal-content">
+        <h3>
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Tous les dépôts
+        </h3>
+        <div class="history-full-list" id="fullHistoryList">
+            <div class="history-empty">Aucun dépôt</div>
+        </div>
+        <button class="modal-close" onclick="closeFullHistoryModal()">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Fermer
+        </button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  VARIABLES
+    // ============================================================
+    let currentUser = null;
+    let depositHistory = [];
+
+    // ============================================================
+    //  AUTH
+    // ============================================================
+    async function doLogout() {
+        await fetch("/api/logout", {method: "POST"});
+        window.location.href = "/";
+    }
+
+    async function loadUserInfo() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user) {
+                currentUser = d.user;
+                document.getElementById("header_user").textContent = d.user.username;
+                document.getElementById("usernameSpeed").value = d.user.username;
+                return d.user;
+            } else {
+                window.location.href = "/";
+            }
+        } catch(e) {
+            window.location.href = "/";
+        }
+    }
+
+    // ============================================================
+    //  COPIER NUMÉRO
+    // ============================================================
+    function copyNumber(number) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(number).then(() => showCopyFeedback(number));
+        } else {
+            const input = document.createElement('input');
+            input.value = number;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showCopyFeedback(number);
+        }
+    }
+
+    function showCopyFeedback(number) {
+        const elements = document.querySelectorAll('.payment-number .method-number');
+        for (const el of elements) {
+            if (el.textContent === number) {
+                const original = el.textContent;
+                el.textContent = 'Copié !';
+                el.style.color = '#0ecb81';
+                setTimeout(() => {
+                    el.textContent = original;
+                    el.style.color = '#fff';
+                }, 1500);
+                break;
+            }
+        }
+    }
+
+    // ============================================================
+    //  HISTORIQUE
+    // ============================================================
+    async function loadHistory() {
+        try {
+            const r = await fetch("/api/deposit/history");
+            const d = await r.json();
+            if (d.success) {
+                depositHistory = d.history || [];
+                renderHistory();
+            }
+        } catch(e) {
+            console.error('Erreur chargement historique:', e);
+        }
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        if (!depositHistory || depositHistory.length === 0) {
+            container.innerHTML = '<div class="history-empty">Aucun dépôt effectué</div>';
+            return;
+        }
+        const lastFive = depositHistory.slice(0, 5);
+        let html = '';
+        for (const item of lastFive) {
+            const statusClass = item.status || 'pending';
+            const statusLabel = statusClass === 'completed' ? '✅ Terminé' :
+                               statusClass === 'pending' ? '⏳ En attente' :
+                               statusClass === 'failed' ? '❌ Échoué' : 'En attente';
+            html += `
+                <div class="history-item" onclick="showDetail('${item.id}')">
+                    <div class="h-left">
+                        <span class="h-amount negative">${item.amount.toFixed(2)} USD</span>
+                        <span class="h-date">${new Date(item.date).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    <span class="h-status ${statusClass}">${statusLabel}</span>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    function openFullHistoryModal() {
+        const container = document.getElementById('fullHistoryList');
+        if (!depositHistory || depositHistory.length === 0) {
+            container.innerHTML = '<div class="history-empty">Aucun dépôt</div>';
+        } else {
+            let html = '';
+            for (const item of depositHistory) {
+                const statusClass = item.status || 'pending';
+                const statusLabel = statusClass === 'completed' ? '✅ Terminé' :
+                                   statusClass === 'pending' ? '⏳ En attente' :
+                                   statusClass === 'failed' ? '❌ Échoué' : 'En attente';
+                html += `
+                    <div class="h-item" onclick="showDetail('${item.id}')">
+                        <span>
+                            <span class="h-amount-small negative">${item.amount.toFixed(2)} USD</span>
+                            <span class="h-date-small">${new Date(item.date).toLocaleDateString('fr-FR')}</span>
+                        </span>
+                        <span class="h-status-small ${statusClass}">${statusLabel}</span>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+        document.getElementById('fullHistoryModal').classList.add('active');
+    }
+
+    function closeFullHistoryModal() {
+        document.getElementById('fullHistoryModal').classList.remove('active');
+    }
+
+    function showDetail(id) {
+        const item = depositHistory.find(w => w.id === id);
+        if (!item) return;
+
+        document.getElementById('d_id').textContent = item.id;
+        document.getElementById('d_name').textContent = item.full_name || '--';
+        document.getElementById('d_username').textContent = item.username || '--';
+        document.getElementById('d_phone').textContent = item.phone || '--';
+        document.getElementById('d_method').textContent = item.method || '--';
+        document.getElementById('d_amount').textContent = item.amount.toFixed(2) + ' USD';
+        document.getElementById('d_date').textContent = new Date(item.date).toLocaleString('fr-FR');
+
+        const statusMap = { 'completed': '✅ Terminé', 'pending': '⏳ En attente', 'failed': '❌ Échoué' };
+        document.getElementById('d_status').textContent = statusMap[item.status] || 'En attente';
+        document.getElementById('d_status').style.color = item.status === 'completed' ? '#0ecb81' :
+                                                         item.status === 'pending' ? '#f0b90b' : '#f6465d';
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            e.target.classList.remove('active');
+        }
+    });
+
+    // ============================================================
+    //  SOUMISSION
+    // ============================================================
+    async function submitDeposit() {
+        const fullName = document.getElementById("fullName").value.trim();
+        const username = document.getElementById("usernameSpeed").value.trim().toLowerCase();
+        const phone = document.getElementById("phoneNumber").value.trim();
+        const method = document.getElementById("paymentMethod").value;
+        const amount = parseFloat(document.getElementById("depositAmount").value);
+        const msg = document.getElementById("formMsg");
+
+        if (!fullName) {
+            msg.textContent = "❌ Veuillez entrer votre nom complet";
+            msg.className = "msg error";
+            return;
+        }
+        if (!username) {
+            msg.textContent = "❌ Veuillez entrer votre username SpeedFint";
+            msg.className = "msg error";
+            return;
+        }
+        if (username !== currentUser.username) {
+            msg.textContent = "❌ Le username ne correspond pas à votre compte";
+            msg.className = "msg error";
+            return;
+        }
+        if (!phone || phone.length < 8) {
+            msg.textContent = "❌ Veuillez entrer un numéro de téléphone valide";
+            msg.className = "msg error";
+            return;
+        }
+        if (!method) {
+            msg.textContent = "❌ Veuillez sélectionner une méthode de paiement";
+            msg.className = "msg error";
+            return;
+        }
+        if (!amount || amount < 1) {
+            msg.textContent = "❌ Montant minimum : 1.00 USD";
+            msg.className = "msg error";
+            return;
+        }
+
+        msg.textContent = "⏳ Envoi de la demande...";
+        msg.className = "msg";
+
+        try {
+            const r = await fetch("/api/deposit/request", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    username: username,
+                    phone: phone,
+                    method: method,
+                    amount: amount
+                })
+            });
+            const d = await r.json();
+
+            if (d.success) {
+                document.getElementById("formSection").classList.add("hidden");
+                document.getElementById("successSection").classList.remove("hidden");
+
+                document.getElementById("s_name").textContent = fullName;
+                document.getElementById("s_username").textContent = username;
+                document.getElementById("s_method").textContent = method;
+                document.getElementById("s_amount").textContent = amount.toFixed(2) + " USD";
+
+                await loadHistory();
+            } else {
+                msg.textContent = "❌ " + d.error;
+                msg.className = "msg error";
+            }
+        } catch (e) {
+            msg.textContent = "❌ Erreur réseau. Veuillez réessayer.";
+            msg.className = "msg error";
+        }
+    }
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    async function init() {
+        await loadUserInfo();
+        await loadHistory();
+    }
+
+    init();
+</script>
+
+</body>
+</html>

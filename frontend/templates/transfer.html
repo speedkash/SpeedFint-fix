@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Transférer FIX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e8e8e8;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 70px;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0b0b0b; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+        .header {
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .logo { font-weight: 700; font-size: 20px; color: #fff; text-decoration: none; }
+        .logo .accent { color: #0ecb81; }
+        .header-right { display: flex; align-items: center; gap: 6px; }
+        .btn-header {
+            padding: 6px 14px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-header:hover { background: #1a1a1a; color: #fff; }
+        .btn-header.primary { background: #0ecb81; border-color: #0ecb81; color: #000; }
+        .btn-header.primary:hover { background: #0dd68a; }
+        .header-user { font-size: 13px; color: #888; }
+
+        .back-btn-wrapper { padding: 0 16px 8px 16px; }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 40px;
+            height: 40px;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+        .back-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 10px 16px 100px 16px;
+        }
+
+        .card {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 20px 20px 18px;
+            margin-bottom: 12px;
+        }
+        .card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .card .sub {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 14px;
+        }
+
+        .address-box {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .address-box .address-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
+        .address-box .address-value {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #0ecb81;
+            word-break: break-all;
+            flex: 1;
+            text-align: center;
+        }
+        .address-box .copy-btn {
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            color: #888;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: inherit;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .address-box .copy-btn:hover { background: #1a1a1a; color: #fff; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #121212;
+            font-size: 14px;
+        }
+        .info-row .label { color: #666; }
+        .info-row .value { color: #fff; font-weight: 600; }
+        .info-row .value.green { color: #0ecb81; }
+        .info-row .value.gold { color: #f0b90b; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: #0ecb81; }
+        .form-group input::placeholder { color: #444; }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-green { background: #0ecb81; color: #000; }
+        .btn-green:hover { background: #0dd68a; }
+        .btn-gold { background: #f0b90b; color: #000; }
+        .btn-gold:hover { background: #f5c81b; }
+        .btn-back {
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            color: #aaa;
+        }
+        .btn-back:hover { background: #1a1a1a; color: #fff; }
+
+        .msg {
+            text-align: center;
+            font-size: 13px;
+            margin-top: 8px;
+            min-height: 18px;
+            font-weight: 500;
+        }
+        .msg.error { color: #f6465d; }
+        .msg.success { color: #0ecb81; }
+
+        .hidden { display: none !important; }
+
+        .success-icon { font-size: 56px; text-align: center; margin-bottom: 12px; }
+        .success-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0ecb81;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .success-sub {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .download-btn {
+            display: inline-block;
+            padding: 10px 24px;
+            background: #f0b90b;
+            color: #000;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 6px;
+        }
+        .download-btn:hover { background: #f5c81b; }
+        .bottom-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .bottom-actions .btn { flex: 1; }
+
+        .history-section { margin-top: 8px; }
+        .history-section .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ccc;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-section .section-title .see-all {
+            font-size: 12px;
+            color: #0ecb81;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .history-section .section-title .see-all:hover { text-decoration: underline; }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            background: #0a0a0a;
+            border: 1px solid #161616;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .history-item:hover { border-color: #2a2a2a; background: #0f0f0f; }
+        .history-item .h-left { display: flex; flex-direction: column; }
+        .history-item .h-amount { font-weight: 600; font-size: 14px; }
+        .history-item .h-amount.negative { color: #f6465d; }
+        .history-item .h-amount.positive { color: #0ecb81; }
+        .history-item .h-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
+        .history-item .h-date { font-size: 11px; color: #555; }
+        .history-item .h-status {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .history-item .h-status.completed { background: rgba(14,203,129,0.12); color: #0ecb81; }
+        .history-item .h-status.pending { background: rgba(240,185,11,0.12); color: #f0b90b; }
+        .history-empty {
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+            padding: 16px 0;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 20px 20px 16px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .modal-content .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #121212;
+            font-size: 13px;
+        }
+        .modal-content .detail-row .label { color: #666; }
+        .modal-content .detail-row .value { color: #fff; font-weight: 500; }
+        .modal-content .detail-row .value.red { color: #f6465d; }
+        .modal-content .detail-row .value.green { color: #0ecb81; }
+        .modal-content .detail-row .value.gold { color: #f0b90b; }
+        .modal-content .detail-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .modal-content .detail-actions .btn-sm {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .modal-content .detail-actions .btn-sm.gold {
+            background: #f0b90b;
+            color: #000;
+        }
+        .modal-content .detail-actions .btn-sm.gold:hover { background: #f5c81b; }
+        .modal-content .detail-actions .btn-sm.back {
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            color: #aaa;
+        }
+        .modal-content .detail-actions .btn-sm.back:hover { background: #1a1a1a; color: #fff; }
+        .modal-close {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #2a2a2a;
+            background: transparent;
+            color: #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+        .modal-close:hover { background: #1a1a1a; color: #fff; }
+        .modal-content .history-full-list { max-height: 260px; overflow-y: auto; }
+        .modal-content .history-full-list .h-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #121212;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .modal-content .history-full-list .h-item:hover { background: #161616; }
+        .modal-content .history-full-list .h-item .h-amount-small { font-weight: 500; }
+        .modal-content .history-full-list .h-item .h-amount-small.negative { color: #f6465d; }
+        .modal-content .history-full-list .h-item .h-amount-small.positive { color: #0ecb81; }
+        .modal-content .history-full-list .h-item .h-date-small { color: #555; font-size: 10px; }
+        .modal-content .history-full-list .h-item .h-status-small { font-size: 10px; padding: 1px 8px; border-radius: 10px; }
+        .modal-content .history-full-list .h-item .h-label-small { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        #invoiceTemplate {
+            display: none;
+            position: fixed;
+            top: -9999px;
+            left: 0;
+            z-index: 9999;
+        }
+        #invoiceContent {
+            background: #0f0f0f;
+            padding: 30px;
+            width: 500px;
+            font-family: 'Inter', sans-serif;
+            color: #e8e8e8;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 10px 12px 100px 12px; }
+            .card { padding: 16px 14px 14px; }
+            .card h2 { font-size: 18px; }
+            .address-box { flex-wrap: wrap; justify-content: center; }
+            .address-box .address-value { font-size: 11px; text-align: center; width: 100%; }
+            .btn { padding: 10px; font-size: 14px; }
+            .header { padding: 10px 12px; }
+            .logo { font-size: 17px; }
+            .btn-header { padding: 4px 10px; font-size: 12px; }
+            #invoiceContent { width: 100%; padding: 20px; }
+            .modal-content .detail-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <a href="/wallet" class="logo"><span class="accent">FIX</span>/USD</a>
+    </div>
+    <div class="header-right">
+        <span class="header-user" id="header_user">--</span>
+        <button class="btn-header primary" onclick="doLogout()">Déconnexion</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="back-btn-wrapper">
+        <a href="/wallet" class="back-btn" title="Retour">
+            <svg viewBox="0 0 24 24">
+                <path d="M19 12H5"/>
+                <path d="M12 19l-7-7 7-7"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- ===== FORMULAIRE DE TRANSFERT ===== -->
+    <div id="formSection">
+        <div class="card">
+            <h2>Transférer FIX</h2>
+            <p class="sub">Envoyez des FIX à un autre utilisateur</p>
+
+            <div class="address-box">
+                <span class="address-label">Votre adresse</span>
+                <span class="address-value" id="myAddress">--</span>
+                <button class="copy-btn" onclick="copyAddress()">Copier</button>
+            </div>
+
+		<button class="btn-header" onclick="window.location.href='/payment-links'" style="display:flex;align-items:center;gap:6px;">
+		    <svg width="24" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+		        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+		        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+		    </svg>
+		    Creer le lien de payement
+		</button>
+
+            <div class="info-row">
+                <span class="label">Solde disponible</span>
+                <span class="value green" id="balanceDisplay">--</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Frais de transfert</span>
+                <span class="value gold">0%</span>
+            </div>
+
+            <div class="form-group" style="margin-top:12px;">
+                <label>Adresse du destinataire</label>
+                <input type="text" id="transferAddress" placeholder="Entrez l'adresse du destinataire">
+            </div>
+            <div class="form-group">
+                <label>Quantité (FIX)</label>
+                <input type="number" id="transferAmount" placeholder="0" step="1" min="1">
+            </div>
+
+            <button class="btn btn-gold" onclick="submitTransfer()">Transférer</button>
+            <div class="msg" id="formMsg"></div>
+        </div>
+
+        <div class="history-section">
+            <div class="section-title">
+                Historique des transferts
+                <span class="see-all" onclick="openFullHistoryModal()">Voir tout →</span>
+            </div>
+            <div id="historyList"><div class="history-empty">Aucun transfert</div></div>
+        </div>
+    </div>
+
+    <!-- ===== PAGE DE CONFIRMATION ===== -->
+    <div id="successSection" class="hidden">
+        <div class="card">
+            <div class="success-icon">✅</div>
+            <div class="success-title">Transfert réussi !</div>
+            <div class="success-sub">
+                Vos FIX ont été envoyés avec succès.<br>
+                Téléchargez la facture pour vos archives.
+            </div>
+            <button class="download-btn" onclick="downloadInvoice()">📄 Télécharger la facture (PNG)</button>
+        </div>
+
+        <div class="bottom-actions">
+            <button class="btn btn-back" onclick="window.location.href='/wallet'">← Portefeuille</button>
+            <button class="btn btn-gold" onclick="window.location.href='/transfer'">Nouveau transfert</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== TEMPLATE FACTURE ===== -->
+<div id="invoiceTemplate">
+    <div id="invoiceContent">
+        <div style="text-align:center;border-bottom:2px solid #0ecb81;padding-bottom:15px;margin-bottom:15px;">
+            <div style="font-size:28px;font-weight:700;color:#0ecb81;">SPEEDFINT</div>
+            <div style="font-size:14px;color:#666;">Facture de transfert FIX</div>
+        </div>
+        
+        <div style="display:flex;justify-content:space-between;margin-bottom:15px;padding:10px 0;border-bottom:1px solid #1a1a1a;">
+            <div><span style="color:#666;">Référence</span><br><span style="font-weight:600;font-family:monospace;font-size:13px;" id="inv_ref">--</span></div>
+            <div style="text-align:right;"><span style="color:#666;">Date</span><br><span style="font-weight:600;" id="inv_date">--</span></div>
+        </div>
+        
+        <div style="margin-bottom:15px;padding:10px 0;border-bottom:1px solid #1a1a1a;">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                <span style="color:#666;">Expéditeur</span>
+                <span style="font-weight:600;" id="inv_sender">--</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                <span style="color:#666;">Destinataire</span>
+                <span style="font-weight:600;" id="inv_recipient">--</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                <span style="color:#666;">Adresse du destinataire</span>
+                <span style="font-weight:600;font-family:monospace;font-size:12px;" id="inv_address">--</span>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:15px;padding:10px 0;border-bottom:1px solid #1a1a1a;">
+            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:16px;">
+                <span style="color:#666;">Montant transféré</span>
+                <span style="font-weight:700;color:#0ecb81;" id="inv_amount">--</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+                <span style="color:#666;">Frais</span>
+                <span style="color:#555;">0 FIX</span>
+            </div>
+        </div>
+        
+        <div style="text-align:center;padding:12px;background:#0a0a0a;border-radius:8px;margin-bottom:10px;">
+            <span style="color:#0ecb81;font-weight:700;font-size:14px;">✅ TRANSFERT RÉUSSI</span>
+        </div>
+        
+        <div style="text-align:center;font-size:10px;color:#444;border-top:1px solid #1a1a1a;padding-top:10px;">
+            Code de vérification : <span style="font-family:monospace;color:#555;" id="inv_code">--</span>
+        </div>
+        
+        <div style="text-align:center;font-size:9px;color:#333;margin-top:8px;">
+            Ce document est un justificatif de transfert valide.
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DETAIL ===== -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+        <h3>Détail du transfert</h3>
+        <div id="detailContent">
+            <div class="detail-row"><span class="label">Type</span><span class="value" id="d_type" style="font-weight:600;">--</span></div>
+            <div class="detail-row"><span class="label">ID</span><span class="value" id="d_id">--</span></div>
+            <div class="detail-row"><span class="label">Expéditeur</span><span class="value" id="d_sender">--</span></div>
+            <div class="detail-row"><span class="label">Destinataire</span><span class="value" id="d_recipient">--</span></div>
+            <div class="detail-row"><span class="label">Adresse</span><span class="value" id="d_address" style="font-size:11px;word-break:break-all;">--</span></div>
+            <div class="detail-row"><span class="label">Quantité</span><span class="value" id="d_amount">--</span></div>
+            <div class="detail-row"><span class="label">Statut</span><span class="value" id="d_status">--</span></div>
+            <div class="detail-row"><span class="label">Date</span><span class="value" id="d_date">--</span></div>
+        </div>
+        <div class="detail-actions">
+            <button class="btn-sm gold" onclick="downloadDetailInvoice()">📄 Télécharger</button>
+            <button class="btn-sm back" onclick="closeDetailModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL HISTORIQUE COMPLET ===== -->
+<div class="modal-overlay" id="fullHistoryModal">
+    <div class="modal-content">
+        <h3>Tous les transferts</h3>
+        <div class="history-full-list" id="fullHistoryList">
+            <div class="history-empty">Aucun transfert</div>
+        </div>
+        <button class="modal-close" onclick="closeFullHistoryModal()">Fermer</button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  VARIABLES
+    // ============================================================
+    let currentUser = null;
+    let currentBalance = 0;
+    let transferData = null;
+    let transferHistory = [];
+    let receivedHistory = [];
+    let allHistory = [];
+    let myAddress = '';
+    let detailItem = null;
+
+    // ============================================================
+    //  AUTH
+    // ============================================================
+    async function doLogout() {
+        await fetch("/api/logout", {method: "POST"});
+        window.location.href = "/";
+    }
+
+    async function loadUserInfo() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user) {
+                currentUser = d.user;
+                document.getElementById("header_user").textContent = d.user.username;
+                myAddress = 'fix_' + currentUser.username + '_' + btoa(currentUser.user_id.toString()).substring(0, 8);
+                document.getElementById("myAddress").textContent = myAddress;
+                return d.user;
+            } else {
+                window.location.href = "/";
+            }
+        } catch(e) {
+            window.location.href = "/";
+        }
+    }
+
+    async function loadBalance() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user.portfolio) {
+                currentBalance = d.user.portfolio.available_assets?.FIX || 0;
+                document.getElementById("balanceDisplay").textContent = currentBalance.toLocaleString() + " FIX";
+            }
+        } catch(e) {}
+    }
+
+    // ============================================================
+    //  COPIER ADRESSE
+    // ============================================================
+    function copyAddress() {
+        const addr = document.getElementById("myAddress").textContent;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(addr).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✅ Copié !';
+                setTimeout(() => btn.textContent = 'Copier', 2000);
+            });
+        } else {
+            const input = document.createElement('input');
+            input.value = addr;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = '✅ Copié !';
+            setTimeout(() => btn.textContent = 'Copier', 2000);
+        }
+    }
+
+    // ============================================================
+    //  HISTORIQUE (envois + réceptions)
+    // ============================================================
+    async function loadHistory() {
+        try {
+            const [sentRes, receivedRes] = await Promise.all([
+                fetch("/api/wallet/transfer/history"),
+                fetch("/api/wallet/transfer/received")
+            ]);
+            
+            const sentData = await sentRes.json();
+            const receivedData = await receivedRes.json();
+            
+            transferHistory = (sentData.success ? sentData.history || [] : []).map(item => ({
+                ...item,
+                type: 'sent'
+            }));
+            
+            receivedHistory = (receivedData.success ? receivedData.history || [] : []).map(item => ({
+                ...item,
+                type: 'received'
+            }));
+            
+            allHistory = [...transferHistory, ...receivedHistory];
+            allHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            renderHistory();
+        } catch(e) {
+            console.error('Erreur chargement historique:', e);
+        }
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        if (!allHistory || allHistory.length === 0) {
+            container.innerHTML = '<div class="history-empty">Aucun transfert</div>';
+            return;
+        }
+        
+        const lastFive = allHistory.slice(0, 5);
+        let html = '';
+        for (const item of lastFive) {
+            const isSent = item.type === 'sent';
+            const amountClass = isSent ? 'negative' : 'positive';
+            const sign = isSent ? '-' : '+';
+            const label = isSent ? 'ENVOI' : 'RÉCEPTION';
+            const statusClass = item.status || 'completed';
+            const statusLabel = statusClass === 'completed' ? '✅ Terminé' : '⏳ En attente';
+            
+            html += `
+                <div class="history-item" onclick="showDetail('${item.id}', '${item.type}')">
+                    <div class="h-left">
+                        <span class="h-label">${label}</span>
+                        <span class="h-amount ${amountClass}">${sign}${item.amount.toLocaleString()} FIX</span>
+                        <span class="h-date">${new Date(item.date).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    <span class="h-status ${statusClass}">${statusLabel}</span>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    function openFullHistoryModal() {
+        const container = document.getElementById('fullHistoryList');
+        if (!allHistory || allHistory.length === 0) {
+            container.innerHTML = '<div class="history-empty">Aucun transfert</div>';
+        } else {
+            let html = '';
+            for (const item of allHistory) {
+                const isSent = item.type === 'sent';
+                const amountClass = isSent ? 'negative' : 'positive';
+                const sign = isSent ? '-' : '+';
+                const label = isSent ? 'ENVOI' : 'RÉCEPTION';
+                const statusClass = item.status || 'completed';
+                const statusLabel = statusClass === 'completed' ? '✅ Terminé' : '⏳ En attente';
+                
+                html += `
+                    <div class="h-item" onclick="showDetail('${item.id}', '${item.type}')">
+                        <span>
+                            <span class="h-label-small">${label}</span>
+                            <span class="h-amount-small ${amountClass}">${sign}${item.amount.toLocaleString()} FIX</span>
+                            <span class="h-date-small">${new Date(item.date).toLocaleDateString('fr-FR')}</span>
+                        </span>
+                        <span class="h-status-small ${statusClass}">${statusLabel}</span>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+        document.getElementById('fullHistoryModal').classList.add('active');
+    }
+
+    function closeFullHistoryModal() {
+        document.getElementById('fullHistoryModal').classList.remove('active');
+    }
+
+    // ============================================================
+    //  DETAIL MODAL (CORRIGÉ)
+    // ============================================================
+    function showDetail(id, type) {
+        // 🔥 Chercher dans le bon tableau
+        let item = null;
+        if (type === 'sent') {
+            item = transferHistory.find(w => String(w.id) === String(id));
+        } else if (type === 'received') {
+            item = receivedHistory.find(w => String(w.id) === String(id));
+        }
+        
+        // 🔥 Si non trouvé, chercher dans allHistory
+        if (!item) {
+            item = allHistory.find(w => String(w.id) === String(id));
+            if (item) {
+                type = item.type || 'sent';
+            }
+        }
+        
+        if (!item) {
+            console.error('❌ Élément non trouvé:', id);
+            return;
+        }
+        
+        detailItem = item;
+        detailItem.type = type;
+        
+        const isSent = type === 'sent';
+        const typeLabel = isSent ? '📤 ENVOI' : '📥 RÉCEPTION';
+        const amountClass = isSent ? 'red' : 'green';
+        const sign = isSent ? '-' : '+';
+        
+        document.getElementById('d_type').textContent = typeLabel;
+        document.getElementById('d_type').style.color = isSent ? '#f6465d' : '#0ecb81';
+        document.getElementById('d_id').textContent = String(item.id).substring(0, 8) + '...';
+        document.getElementById('d_sender').textContent = isSent ? currentUser.username : (item.sender_username || 'Inconnu');
+        document.getElementById('d_recipient').textContent = isSent ? (item.recipient_username || item.recipient_address || 'Inconnu') : currentUser.username;
+        document.getElementById('d_address').textContent = item.recipient_address || item.sender_address || 'N/A';
+        document.getElementById('d_amount').textContent = sign + item.amount.toLocaleString() + ' FIX';
+        document.getElementById('d_amount').className = 'value ' + amountClass;
+        document.getElementById('d_date').textContent = new Date(item.date).toLocaleString('fr-FR');
+        
+        const statusMap = { 'completed': '✅ Terminé', 'pending': '⏳ En attente' };
+        document.getElementById('d_status').textContent = statusMap[item.status] || 'Terminé';
+        document.getElementById('d_status').style.color = item.status === 'completed' ? '#0ecb81' : '#f0b90b';
+        
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('active');
+        detailItem = null;
+    }
+
+    // ============================================================
+    //  TÉLÉCHARGER DEPUIS LE DETAIL
+    // ============================================================
+    function downloadDetailInvoice() {
+        if (!detailItem) return;
+        
+        const isSent = detailItem.type === 'sent';
+        const ref = 'TX-' + Date.now().toString(36).toUpperCase();
+        
+        document.getElementById('inv_ref').textContent = ref;
+        document.getElementById('inv_date').textContent = new Date().toLocaleString('fr-FR');
+        document.getElementById('inv_sender').textContent = isSent ? currentUser.username : (detailItem.sender_username || 'Inconnu');
+        document.getElementById('inv_recipient').textContent = isSent ? (detailItem.recipient_username || detailItem.recipient_address || 'Inconnu') : currentUser.username;
+        document.getElementById('inv_address').textContent = detailItem.recipient_address || detailItem.sender_address || 'N/A';
+        document.getElementById('inv_amount').textContent = detailItem.amount.toLocaleString() + ' FIX';
+        document.getElementById('inv_code').textContent = btoa(JSON.stringify({
+            user: currentUser.username,
+            amount: detailItem.amount,
+            time: Date.now()
+        })).substring(0, 20);
+
+        const template = document.getElementById('invoiceTemplate');
+        template.style.display = 'block';
+        template.style.position = 'fixed';
+        template.style.top = '-9999px';
+        template.style.left = '0';
+        template.style.zIndex = '9999';
+
+        html2canvas(document.getElementById('invoiceContent'), {
+            scale: 2,
+            backgroundColor: '#0f0f0f',
+            useCORS: true,
+            logging: false,
+            width: 500,
+            height: 600
+        }).then(canvas => {
+            template.style.display = 'none';
+            const link = document.createElement('a');
+            link.download = `facture_transfert_${ref}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(err => {
+            console.error('Erreur capture:', err);
+            template.style.display = 'none';
+            fallbackDownloadDetail();
+        });
+    }
+
+    function fallbackDownloadDetail() {
+        if (!detailItem) return;
+        const isSent = detailItem.type === 'sent';
+        const ref = 'TX-' + Date.now().toString(36).toUpperCase();
+        const content = `
+        ═══════════════════════════════════════════════════════
+              SPEEDFINT - FACTURE DE TRANSFERT
+        ═══════════════════════════════════════════════════════
+        Référence : ${ref}
+        Date : ${new Date().toLocaleString('fr-FR')}
+        ───────────────────────────────────────────────────────
+        Type : ${isSent ? 'ENVOI' : 'RÉCEPTION'}
+        Expéditeur : ${isSent ? currentUser.username : (detailItem.sender_username || 'Inconnu')}
+        Destinataire : ${isSent ? (detailItem.recipient_username || detailItem.recipient_address || 'Inconnu') : currentUser.username}
+        Montant : ${detailItem.amount.toLocaleString()} FIX
+        ───────────────────────────────────────────────────────
+        Statut : ✅ TERMINÉ
+        ═══════════════════════════════════════════════════════
+        `;
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `facture_transfert_${ref}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            e.target.classList.remove('active');
+        }
+    });
+
+    // ============================================================
+    //  SOUMISSION
+    // ============================================================
+    async function submitTransfer() {
+        const address = document.getElementById("transferAddress").value.trim();
+        const amount = parseInt(document.getElementById("transferAmount").value);
+        const msg = document.getElementById("formMsg");
+
+        if (!address) {
+            msg.textContent = "❌ Entrez une adresse de destinataire";
+            msg.className = "msg error";
+            return;
+        }
+        if (address === myAddress) {
+            msg.textContent = "❌ Vous ne pouvez pas vous envoyer à vous-même";
+            msg.className = "msg error";
+            return;
+        }
+        if (!amount || amount <= 0) {
+            msg.textContent = "❌ Quantité invalide";
+            msg.className = "msg error";
+            return;
+        }
+        if (amount > currentBalance) {
+            msg.textContent = "❌ Solde insuffisant. Disponible: " + currentBalance.toLocaleString() + " FIX";
+            msg.className = "msg error";
+            return;
+        }
+
+        msg.textContent = "⏳ Traitement...";
+        msg.className = "msg";
+
+        try {
+            const r = await fetch("/api/wallet/transfer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ recipient_address: address, amount: amount })
+            });
+            const d = await r.json();
+
+            if (d.success) {
+                transferData = {
+                    username: currentUser.username,
+                    recipient: address,
+                    recipient_username: d.recipient_username || 'Utilisateur',
+                    recipient_address: address,
+                    amount: amount,
+                    date: new Date().toLocaleString('fr-FR')
+                };
+                document.getElementById("formSection").classList.add("hidden");
+                document.getElementById("successSection").classList.remove("hidden");
+                loadHistory();
+                loadBalance();
+            } else {
+                msg.textContent = "❌ " + d.error;
+                msg.className = "msg error";
+            }
+        } catch (e) {
+            msg.textContent = "❌ Erreur réseau";
+            msg.className = "msg error";
+        }
+    }
+
+    // ============================================================
+    //  FACTURE SUCCESS
+    // ============================================================
+    function downloadInvoice() {
+        if (!transferData) return;
+
+        const ref = 'TX-' + Date.now().toString(36).toUpperCase();
+        document.getElementById('inv_ref').textContent = ref;
+        document.getElementById('inv_date').textContent = new Date().toLocaleString('fr-FR');
+        document.getElementById('inv_sender').textContent = transferData.username;
+        document.getElementById('inv_recipient').textContent = transferData.recipient_username || transferData.recipient;
+        document.getElementById('inv_address').textContent = transferData.recipient_address || transferData.recipient;
+        document.getElementById('inv_amount').textContent = transferData.amount.toLocaleString() + ' FIX';
+        document.getElementById('inv_code').textContent = btoa(JSON.stringify({
+            user: transferData.username,
+            amount: transferData.amount,
+            time: Date.now()
+        })).substring(0, 20);
+
+        const template = document.getElementById('invoiceTemplate');
+        template.style.display = 'block';
+        template.style.position = 'fixed';
+        template.style.top = '-9999px';
+        template.style.left = '0';
+        template.style.zIndex = '9999';
+
+        html2canvas(document.getElementById('invoiceContent'), {
+            scale: 2,
+            backgroundColor: '#0f0f0f',
+            useCORS: true,
+            logging: false,
+            width: 500,
+            height: 600
+        }).then(canvas => {
+            template.style.display = 'none';
+            const link = document.createElement('a');
+            link.download = `facture_transfert_${transferData.username}_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(err => {
+            console.error('Erreur capture:', err);
+            template.style.display = 'none';
+            fallbackDownload();
+        });
+    }
+
+    function fallbackDownload() {
+        if (!transferData) return;
+        const content = `
+        ═══════════════════════════════════════════════════════
+              SPEEDFINT - FACTURE DE TRANSFERT
+        ═══════════════════════════════════════════════════════
+        Référence : TX-${Date.now().toString(36).toUpperCase()}
+        Date : ${new Date().toLocaleString('fr-FR')}
+        ───────────────────────────────────────────────────────
+        Expéditeur : ${transferData.username}
+        Destinataire : ${transferData.recipient_username || transferData.recipient}
+        Montant : ${transferData.amount.toLocaleString()} FIX
+        Frais : 0 FIX
+        ───────────────────────────────────────────────────────
+        Statut : ✅ TRANSFERT RÉUSSI
+        ═══════════════════════════════════════════════════════
+        `;
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `facture_transfert_${transferData.username}_${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    async function init() {
+        await loadUserInfo();
+        await loadBalance();
+        await loadHistory();
+    }
+    init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retrait FIX/USD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #0b0b0b;
+        color: #e8e8e8;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 70px;
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0b0b0b; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+    /* ===== HEADER ===== */
+    .header {
+        background: #0a0a0a;
+        border-bottom: 1px solid #1a1a1a;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo { font-weight: 700; font-size: 20px; color: #fff; text-decoration: none; }
+    .logo .accent { color: #0ecb81; }
+    .header-right { display: flex; align-items: center; gap: 6px; }
+    .btn-header {
+        padding: 6px 14px;
+        border: 1px solid #2a2a2a;
+        background: transparent;
+        color: #aaa;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    .btn-header:hover { background: #1a1a1a; color: #fff; }
+    .btn-header.primary { background: #0ecb81; border-color: #0ecb81; color: #000; }
+    .btn-header.primary:hover { background: #0dd68a; }
+    .header-user { font-size: 13px; color: #888; }
+
+    /* ===== BOUTON RETOUR ===== */
+    .back-btn-wrapper {
+        padding: 0 16px 8px 16px;
+    }
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        border: 1px solid #2a2a2a;
+        background: transparent;
+        color: #aaa;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 40px;
+        height: 40px;
+        text-decoration: none;
+    }
+    .back-btn:hover { background: #1a1a1a; color: #fff; border-color: #3a3a3a; }
+    .back-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+	/* Trouve cette ligne et modifie */
+	.container {
+	    max-width: 100%;
+	    margin: 0;
+	    padding: 10px 16px 100px 16px;  /* ← ajoute 16px de chaque côté */
+	}
+
+    /* ===== CARD - PLEINE LARGEUR ===== */
+    .card {
+        background: #0f0f0f;
+        border-top: 1px solid #1a1a1a;
+        border-bottom: 1px solid #1a1a1a;
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+        padding: 20px 16px 18px;
+        margin-bottom: 12px;
+    }
+    .card h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 2px;
+    }
+    .card .sub {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 14px;
+    }
+
+    /* ===== INFO ROW ===== */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #121212;
+        font-size: 14px;
+    }
+    .info-row .label { color: #666; }
+    .info-row .value { color: #fff; font-weight: 600; }
+    .info-row .value.green { color: #0ecb81; }
+    .info-row .value.gold { color: #f0b90b; }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        color: #888;
+        font-weight: 500;
+        margin-bottom: 3px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        background: #000;
+        border: 1px solid #1a1a1a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: #0ecb81; }
+    .form-group input::placeholder { color: #444; }
+
+    /* ===== FEE INFO ===== */
+    .fee-info {
+        font-size: 12px;
+        color: #555;
+        margin-top: 2px;
+        text-align: right;
+    }
+
+    /* ===== BUTTON ===== */
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-green { background: #0ecb81; color: #000; }
+    .btn-green:hover { background: #0dd68a; }
+    .btn-back {
+        background: transparent;
+        border: 1px solid #2a2a2a;
+        color: #aaa;
+    }
+    .btn-back:hover { background: #1a1a1a; color: #fff; }
+
+    /* ===== MESSAGES ===== */
+    .msg {
+        text-align: center;
+        font-size: 13px;
+        margin-top: 8px;
+        min-height: 18px;
+        font-weight: 500;
+    }
+    .msg.error { color: #f6465d; }
+    .msg.success { color: #0ecb81; }
+
+    .hidden { display: none !important; }
+
+    /* ===== SUCCESS PAGE ===== */
+    .success-icon { font-size: 56px; text-align: center; margin-bottom: 12px; }
+    .success-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0ecb81;
+        text-align: center;
+        margin-bottom: 4px;
+    }
+    .success-sub {
+        text-align: center;
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    .qr-container {
+        display: flex;
+        justify-content: center;
+        margin: 12px 0;
+    }
+    #qrcode {
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    #qrcode img { display: block; }
+    .code-data {
+        background: #0a0a0a;
+        border: 1px solid #1a1a1a;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        color: #555;
+        word-break: break-all;
+        text-align: center;
+        margin-top: 6px;
+    }
+    .download-btn {
+        display: inline-block;
+        padding: 10px 24px;
+        background: #f0b90b;
+        color: #000;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        transition: all 0.2s;
+        width: 100%;
+        margin-top: 6px;
+    }
+    .download-btn:hover { background: #f5c81b; }
+    .bottom-actions {
+        display: flex;
+        gap: 10px;
+        padding: 0 16px;
+        margin-top: 10px;
+    }
+    .bottom-actions .btn { flex: 1; }
+
+    /* ===== HISTORIQUE ===== */
+    .history-section {
+        margin-top: 8px;
+        padding: 0 16px;
+    }
+    .history-section .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #ccc;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .history-section .section-title .see-all {
+        font-size: 12px;
+        color: #0ecb81;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    .history-section .section-title .see-all:hover { text-decoration: underline; }
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+        background: #0a0a0a;
+        border: 1px solid #161616;
+        border-radius: 8px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .history-item:hover { border-color: #2a2a2a; background: #0f0f0f; }
+    .history-item .h-left { display: flex; flex-direction: column; }
+    .history-item .h-amount { font-weight: 600; font-size: 14px; }
+    .history-item .h-amount.negative { color: #f6465d; }
+    .history-item .h-amount.positive { color: #0ecb81; }
+    .history-item .h-date { font-size: 11px; color: #555; }
+    .history-item .h-status {
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+    .history-item .h-status.completed { background: rgba(14,203,129,0.12); color: #0ecb81; }
+    .history-item .h-status.pending { background: rgba(240,185,11,0.12); color: #f0b90b; }
+    .history-item .h-status.failed { background: rgba(246,70,93,0.12); color: #f6465d; }
+    .history-empty {
+        text-align: center;
+        color: #555;
+        font-size: 13px;
+        padding: 16px 0;
+    }
+
+    /* ===== MODALS ===== */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+        background: #0f0f0f;
+        border: 1px solid #1a1a1a;
+        border-radius: 12px;
+        padding: 20px 20px 16px;
+        max-width: 380px;
+        width: 90%;
+    }
+    .modal-content h3 {
+        color: #fff;
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    .modal-content .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #121212;
+        font-size: 13px;
+    }
+    .modal-content .detail-row .label { color: #666; }
+    .modal-content .detail-row .value { color: #fff; font-weight: 500; }
+    .modal-content .detail-row .value.red { color: #f6465d; }
+    .modal-content .detail-row .value.green { color: #0ecb81; }
+    .modal-close {
+        width: 100%;
+        padding: 9px;
+        border: 1px solid #2a2a2a;
+        background: transparent;
+        color: #aaa;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        margin-top: 10px;
+        transition: all 0.2s;
+    }
+    .modal-close:hover { background: #1a1a1a; color: #fff; }
+    .modal-content .history-full-list { max-height: 260px; overflow-y: auto; }
+    .modal-content .history-full-list .h-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #121212;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    .modal-content .history-full-list .h-item:hover { background: #161616; }
+    .modal-content .history-full-list .h-item .h-amount-small { font-weight: 500; }
+    .modal-content .history-full-list .h-item .h-amount-small.negative { color: #f6465d; }
+    .modal-content .history-full-list .h-item .h-date-small { color: #555; font-size: 10px; }
+    .modal-content .history-full-list .h-item .h-status-small { font-size: 10px; padding: 1px 8px; border-radius: 10px; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+        .container { padding: 6px 0 100px 0; }
+        .card { padding: 16px 12px 14px; }
+        .card h2 { font-size: 18px; }
+        .success-title { font-size: 18px; }
+        .back-btn-wrapper { padding: 0 12px 6px 12px; }
+        .bottom-actions { padding: 0 12px; }
+        .history-section { padding: 0 12px; }
+        .btn { padding: 10px; font-size: 14px; }
+        .form-group input { padding: 8px 12px; font-size: 13px; }
+        .header { padding: 10px 12px; }
+        .logo { font-size: 17px; }
+        .btn-header { padding: 4px 10px; font-size: 12px; }
+        .modal-content { padding: 16px; }
+    }
+</style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <a href="/wallet" class="logo"><span class="accent">FIX</span>/USD</a>
+    </div>
+    <div class="header-right">
+        <span class="header-user" id="header_user">--</span>
+        <button class="btn-header primary" onclick="doLogout()">Déconnexion</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- ===== BOUTON RETOUR ===== -->
+    <div style="margin-bottom:12px;">
+        <a href="/wallet" class="back-btn" title="Retour">
+            <svg viewBox="0 0 24 24">
+                <path d="M19 12H5"/>
+                <path d="M12 19l-7-7 7-7"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- ===== FORMULAIRE DE RETRAIT ===== -->
+    <div id="formSection">
+        <div class="card">
+            <h2>Retrait USD</h2>
+            <p class="sub">Retirez vos fonds vers un wallet externe</p>
+
+            <div class="info-row">
+                <span class="label">Solde disponible</span>
+                <span class="value green" id="balanceDisplay">--</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Frais de retrait</span>
+                <span class="value" style="color:#f0b90b;">1%</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Montant minimum</span>
+                <span class="value" style="color:#f0b90b;">10.00 USD</span>
+            </div>
+
+            <div class="form-group" style="margin-top:16px;">
+                <label>Adresse de retrait</label>
+                <input type="text" id="withdrawAddress" placeholder="Entrez l'adresse du wallet externe">
+            </div>
+            <div class="form-group">
+                <label>Montant (USD)</label>
+                <input type="number" id="withdrawAmount" placeholder="10.00" step="0.01" min="10">
+            </div>
+            <div class="fee-info" id="feePreview">Frais estimés : 0.00 USD</div>
+
+            <button class="btn btn-green" onclick="submitWithdraw()">Valider le retrait</button>
+            <div class="msg" id="formMsg"></div>
+        </div>
+
+        <!-- ===== HISTORIQUE DES RETRAITS (5 derniers) ===== -->
+        <div class="history-section">
+            <div class="section-title">
+                Historique des retraits
+                <span class="see-all" onclick="openFullHistoryModal()">Voir tout →</span>
+            </div>
+            <div id="historyList">
+                <div class="history-empty">Aucun retrait effectué</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PAGE DE CONFIRMATION ===== -->
+    <div id="successSection" class="hidden">
+        <div class="card">
+            <div class="success-icon">🎉</div>
+            <div class="success-title">Félicitations !</div>
+            <div class="success-sub">
+                Votre demande de retrait a été prise en compte.<br>
+                Veuillez télécharger ce document et le scanner<br>
+                sur la plateforme <strong>SpeedFint</strong> pour recevoir votre paiement.
+            </div>
+
+            <div class="qr-container">
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="code-data" id="codeData">--</div>
+
+            <button class="download-btn" onclick="downloadDocument()">📄 Télécharger le document</button>
+        </div>
+
+        <div class="bottom-actions">
+            <button class="btn btn-back" onclick="window.location.href='/wallet'" style="flex:1;padding:12px;border:1px solid #2a2a2a;background:transparent;color:#aaa;border-radius:10px;cursor:pointer;font-family:inherit;">← Portefeuille</button>
+            <button class="btn btn-green" onclick="window.location.href='/withdraw'" style="flex:1;">Nouveau retrait</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== MODAL DETAIL ===== -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+        <h3>Détail du retrait</h3>
+        <div id="detailContent">
+            <div class="detail-row"><span class="label">ID</span><span class="value" id="d_id">--</span></div>
+            <div class="detail-row"><span class="label">Montant</span><span class="value red" id="d_amount">--</span></div>
+            <div class="detail-row"><span class="label">Frais (1%)</span><span class="value" id="d_fee">--</span></div>
+            <div class="detail-row"><span class="label">Net reçu</span><span class="value green" id="d_net">--</span></div>
+            <div class="detail-row"><span class="label">Adresse</span><span class="value" id="d_address" style="font-size:12px;word-break:break-all;">--</span></div>
+            <div class="detail-row"><span class="label">Statut</span><span class="value" id="d_status">--</span></div>
+            <div class="detail-row"><span class="label">Date</span><span class="value" id="d_date">--</span></div>
+        </div>
+        <button class="modal-close" onclick="closeDetailModal()">Fermer</button>
+    </div>
+</div>
+
+<!-- ===== MODAL HISTORIQUE COMPLET ===== -->
+<div class="modal-overlay" id="fullHistoryModal">
+    <div class="modal-content">
+        <h3>Tous les retraits</h3>
+        <div class="history-full-list" id="fullHistoryList">
+            <div class="history-empty">Aucun retrait</div>
+        </div>
+        <button class="modal-close" onclick="closeFullHistoryModal()">Fermer</button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  VARIABLES
+    // ============================================================
+    let currentUser = null;
+    let currentBalance = 0;
+    let withdrawData = null;
+    let withdrawHistory = [];
+
+    // ============================================================
+    //  AUTH
+    // ============================================================
+    async function doLogout() {
+        await fetch("/api/logout", {method: "POST"});
+        window.location.href = "/";
+    }
+
+    async function loadUserInfo() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user) {
+                currentUser = d.user;
+                document.getElementById("header_user").textContent = d.user.username;
+                return d.user;
+            } else {
+                window.location.href = "/";
+            }
+        } catch(e) {
+            window.location.href = "/";
+        }
+    }
+
+    async function loadBalance() {
+        try {
+            const r = await fetch("/api/me");
+            const d = await r.json();
+            if (d.success && d.user.portfolio) {
+                currentBalance = d.user.portfolio.cash || 0;
+                document.getElementById("balanceDisplay").textContent = currentBalance.toFixed(2) + " USD";
+            }
+        } catch(e) {}
+    }
+
+    // ============================================================
+    //  HISTORIQUE (5 derniers)
+    // ============================================================
+    async function loadHistory() {
+        try {
+            const r = await fetch("/api/wallet/withdraw/history");
+            const d = await r.json();
+            if (d.success) {
+                withdrawHistory = d.history || [];
+                renderHistory();
+            }
+        } catch(e) {
+            console.error('Erreur chargement historique:', e);
+        }
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        if (!withdrawHistory || withdrawHistory.length === 0) {
+            container.innerHTML = '<div class="history-empty">Aucun retrait effectué</div>';
+            return;
+        }
+
+        // 🔥 Afficher seulement les 5 derniers
+        const lastFive = withdrawHistory.slice(0, 5);
+        let html = '';
+        for (const item of lastFive) {
+            const statusClass = item.status || 'pending';
+            const statusLabel = statusClass === 'completed' ? '✅ Terminé' :
+                               statusClass === 'pending' ? '⏳ En attente' :
+                               statusClass === 'failed' ? '❌ Échoué' : 'En attente';
+            const amountClass = item.amount > 0 ? 'negative' : 'positive';
+            const sign = item.amount > 0 ? '-' : '';
+
+            html += `
+                <div class="history-item" onclick="showDetail('${item.id}')">
+                    <div class="h-left">
+                        <span class="h-amount ${amountClass}">${sign}${Math.abs(item.amount).toFixed(2)} USD</span>
+                        <span class="h-date">${new Date(item.date).toLocaleDateString('fr-FR')} ${new Date(item.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <span class="h-status ${statusClass}">${statusLabel}</span>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    // ============================================================
+    //  HISTORIQUE COMPLET (modal)
+    // ============================================================
+    function openFullHistoryModal() {
+        const container = document.getElementById('fullHistoryList');
+        
+        if (!withdrawHistory || withdrawHistory.length === 0) {
+            container.innerHTML = '<div class="history-empty">Aucun retrait</div>';
+        } else {
+            let html = '';
+            for (const item of withdrawHistory) {
+                const statusClass = item.status || 'pending';
+                const statusLabel = statusClass === 'completed' ? '✅ Terminé' :
+                                   statusClass === 'pending' ? '⏳ En attente' :
+                                   statusClass === 'failed' ? '❌ Échoué' : 'En attente';
+                const amountClass = item.amount > 0 ? 'negative' : 'positive';
+                const sign = item.amount > 0 ? '-' : '';
+
+                html += `
+                    <div class="h-item" onclick="showDetail('${item.id}')" style="cursor:pointer;">
+                        <span>
+                            <span class="h-amount-small ${amountClass}">${sign}${Math.abs(item.amount).toFixed(2)} USD</span>
+                            <span class="h-date-small">${new Date(item.date).toLocaleDateString('fr-FR')}</span>
+                        </span>
+                        <span class="h-status ${statusClass}">${statusLabel}</span>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+        
+        document.getElementById('fullHistoryModal').classList.add('active');
+    }
+
+    function closeFullHistoryModal() {
+        document.getElementById('fullHistoryModal').classList.remove('active');
+    }
+
+    // ============================================================
+    //  DETAIL MODAL
+    // ============================================================
+    function showDetail(id) {
+        const item = withdrawHistory.find(w => w.id === id);
+        if (!item) return;
+
+        document.getElementById('d_id').textContent = item.id.substring(0, 8) + '...';
+        document.getElementById('d_amount').textContent = '-' + item.amount.toFixed(2) + ' USD';
+        document.getElementById('d_fee').textContent = (item.fee || item.amount * 0.01).toFixed(2) + ' USD';
+        document.getElementById('d_net').textContent = (item.amount - (item.fee || item.amount * 0.01)).toFixed(2) + ' USD';
+        document.getElementById('d_address').textContent = item.address || 'N/A';
+        document.getElementById('d_date').textContent = new Date(item.date).toLocaleString('fr-FR');
+
+        const statusMap = {
+            'completed': '✅ Terminé',
+            'pending': '⏳ En attente',
+            'failed': '❌ Échoué'
+        };
+        document.getElementById('d_status').textContent = statusMap[item.status] || 'En attente';
+        document.getElementById('d_status').style.color = item.status === 'completed' ? '#0ecb81' :
+                                                          item.status === 'pending' ? '#f0b90b' : '#f6465d';
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    // Fermer les modals en cliquant à l'extérieur
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            e.target.classList.remove('active');
+        }
+    });
+
+    // ============================================================
+    //  FRAIS
+    // ============================================================
+    document.getElementById("withdrawAmount").addEventListener("input", function() {
+        const amount = parseFloat(this.value) || 0;
+        const fee = amount * 0.01;
+        document.getElementById("feePreview").textContent = "Frais estimés : " + fee.toFixed(2) + " USD";
+    });
+
+    // ============================================================
+    //  SOUMISSION
+    // ============================================================
+    async function submitWithdraw() {
+        const address = document.getElementById("withdrawAddress").value.trim();
+        const amount = parseFloat(document.getElementById("withdrawAmount").value);
+        const msg = document.getElementById("formMsg");
+
+        if (!address) {
+            msg.textContent = "❌ Entrez une adresse de retrait";
+            msg.className = "msg error";
+            return;
+        }
+        if (!amount || amount <= 0) {
+            msg.textContent = "❌ Montant invalide";
+            msg.className = "msg error";
+            return;
+        }
+        if (amount < 10) {
+            msg.textContent = "❌ Montant minimum : 10.00 USD";
+            msg.className = "msg error";
+            return;
+        }
+        if (amount > currentBalance) {
+            msg.textContent = "❌ Solde insuffisant. Disponible: " + currentBalance.toFixed(2) + " USD";
+            msg.className = "msg error";
+            return;
+        }
+
+        const fee = amount * 0.01;
+        const totalDeducted = amount + fee;
+
+        if (totalDeducted > currentBalance) {
+            msg.textContent = "❌ Montant + frais (" + totalDeducted.toFixed(2) + " USD) dépasse votre solde";
+            msg.className = "msg error";
+            return;
+        }
+
+        msg.textContent = "⏳ Traitement en cours...";
+        msg.className = "msg";
+
+        try {
+            const r = await fetch("/api/wallet/withdraw", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ address: address, amount: amount })
+            });
+            const d = await r.json();
+
+            if (d.success) {
+                // 🔥 Générer les données pour le QR code
+                const encodedData = btoa(JSON.stringify({
+                    user: currentUser.username,
+                    amount: amount,
+                    fee: fee,
+                    address: address,
+                    timestamp: Date.now()
+                }));
+
+                withdrawData = {
+                    username: currentUser.username,
+                    amount: amount,
+                    fee: fee,
+                    address: address,
+                    encoded: encodedData
+                };
+
+                // Afficher la page de succès
+                document.getElementById("formSection").classList.add("hidden");
+                document.getElementById("successSection").classList.remove("hidden");
+
+                // Générer le QR code
+                generateQR(encodedData);
+
+                // Afficher le code
+                document.getElementById("codeData").textContent = encodedData;
+
+                // Recharger l'historique
+                loadHistory();
+
+            } else {
+                msg.textContent = "❌ " + d.error;
+                msg.className = "msg error";
+            }
+        } catch (e) {
+            msg.textContent = "❌ Erreur réseau";
+            msg.className = "msg error";
+        }
+    }
+
+    // ============================================================
+    //  QR CODE
+    // ============================================================
+    function generateQR(data) {
+        const container = document.getElementById("qrcode");
+        container.innerHTML = "";
+        try {
+            new QRCode(container, {
+                text: data,
+                width: 180,
+                height: 180,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch(e) {
+            container.innerHTML = '<span style="color:#666;font-size:12px;">QR Code non disponible</span>';
+        }
+    }
+
+    // ============================================================
+    //  TÉLÉCHARGEMENT
+    // ============================================================
+    function downloadDocument() {
+        if (!withdrawData) return;
+
+        const content = `
+        ============================================
+        SPEEDFINT - CONFIRMATION DE RETRAIT
+        ============================================
+        
+        Utilisateur : ${withdrawData.username}
+        Montant : ${withdrawData.amount.toFixed(2)} USD
+        Frais (1%) : ${withdrawData.fee.toFixed(2)} USD
+        Net : ${(withdrawData.amount - withdrawData.fee).toFixed(2)} USD
+        Adresse : ${withdrawData.address}
+        Date : ${new Date().toLocaleString('fr-FR')}
+        
+        Code de vérification : 
+        ${withdrawData.encoded}
+        
+        ============================================
+        Ce document est à scanner sur SpeedFint
+        ============================================
+        `;
+
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `retrait_${withdrawData.username}_${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    async function init() {
+        await loadUserInfo();
+        await loadBalance();
+        await loadHistory();
+
+        // Vérifier si on revient d'un retrait réussi
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('success') === 'true') {
+            document.getElementById("formSection").classList.add("hidden");
+            document.getElementById("successSection").classList.remove("hidden");
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>

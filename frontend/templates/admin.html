@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marché FIX - Administration</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #000;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 0 16px;
+            height: 52px;
+        }
+        .header a { color: #fff; text-decoration: none; font-weight: 700; font-size: 16px; }
+        .header a span { color: #f0b90b; }
+        .btn-sm {
+            padding: 6px 14px;
+            border: 1px solid #222;
+            background: #111;
+            color: #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.15s;
+        }
+        .btn-sm:hover { background: #1a1a1a; color: #fff; }
+        .btn-sm.green { background: #0ecb81; color: #000; border: none; }
+        .btn-sm.green:hover { background: #0dd68a; }
+        .btn-sm.red { background: #f6465d; color: #fff; border: none; }
+        .btn-sm.red:hover { background: #f75b6f; }
+        .btn-sm.blue { background: #3772ff; color: #fff; border: none; }
+        .btn-sm.blue:hover { background: #4d82ff; }
+
+        .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+
+        .card {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .card h2 {
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .stat-box {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+        .stat-box .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        .stat-box .stat-value.green { color: #0ecb81; }
+        .stat-box .stat-value.gold { color: #f0b90b; }
+        .stat-box .stat-value.blue { color: #3772ff; }
+        .stat-box .stat-value.red { color: #f6465d; }
+        .stat-box .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Forms */
+        .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 120px; }
+        .form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #f0b90b; }
+        .form-group select { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-green { background: #0ecb81; color: #000; }
+        .btn-green:hover { background: #0dd68a; }
+        .btn-blue { background: #3772ff; color: #fff; }
+        .btn-blue:hover { background: #4d82ff; }
+        .btn-red { background: #f6465d; color: #fff; }
+        .btn-red:hover { background: #f75b6f; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            color: #888;
+            font-weight: 500;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #1a1a1a;
+            background: #0a0a0a;
+        }
+        td { padding: 8px 12px; border-bottom: 1px solid #0f0f0f; }
+        tr:hover td { background: #0f0f0f; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(14,203,129,0.15); color: #0ecb81; }
+        .badge-warning { background: rgba(240,185,11,0.15); color: #f0b90b; }
+        .badge-danger { background: rgba(246,70,93,0.15); color: #f6465d; }
+        .badge-info { background: rgba(55,114,255,0.15); color: #3772ff; }
+
+        .msg { font-size: 12px; margin-top: 8px; min-height: 18px; }
+
+        .text-mono { font-family: 'Courier New', monospace; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/dashboard">📈 Marché<span>FIX</span></a>
+    <div style="display:flex;gap:8px;align-items:center;">
+        <span style="color:#888;font-size:12px;" id="header_user">--</span>
+        <button class="btn-sm" onclick="doLogout()">Déconnexion</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- ===== STATISTIQUES GLOBALES ===== -->
+    <div class="card">
+        <h2>📊 Aperçu du marché</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value gold" id="stat_price">--</div>
+                <div class="stat-label">Prix actuel FIX/USD</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat_supply">--</div>
+                <div class="stat-label">FIX en circulation</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value blue" id="stat_total_fix">--</div>
+                <div class="stat-label">Offre totale FIX</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value green" id="stat_total_usd">--</div>
+                <div class="stat-label">USD en circulation</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat_users">--</div>
+                <div class="stat-label">Utilisateurs (humains)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat_bots">--</div>
+                <div class="stat-label">Bots market makers</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat_trades">--</div>
+                <div class="stat-label">Total trades</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value red" id="stat_fees">--</div>
+                <div class="stat-label">Frais collectés (admin)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GESTION DES FONDS ===== -->
+    <div class="card">
+        <h2>💵 Gestion des fonds</h2>
+        <div class="row">
+            <div class="form-group" style="flex:2;">
+                <label>Utilisateur cible</label>
+                <input type="text" id="target_user" placeholder="Nom d'utilisateur">
+            </div>
+            <div class="form-group">
+                <label>Cash ($)</label>
+                <input type="number" id="cash_amount" value="1000" min="1" step="1">
+            </div>
+            <button class="btn btn-green" onclick="addCash()">💵 Donner cash</button>
+            <div class="form-group">
+                <label>FIX (quantité)</label>
+                <input type="number" id="fix_amount" value="10000" min="1" step="1">
+            </div>
+            <button class="btn btn-blue" onclick="addFix()">🎯 Donner FIX</button>
+        </div>
+        <div class="msg" id="admin_msg"></div>
+    </div>
+
+    <!-- ===== ROBOTS ALÉATOIRES ===== -->
+    <div class="card">
+        <h2>🤖 Robots de trading aléatoire</h2>
+        <div class="row">
+            <div class="form-group" style="flex:2;">
+                <label>Compte utilisateur</label>
+                <select id="bot_user_select">
+                    <option value="">-- Choisir un compte --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Intervalle (s)</label>
+                <input type="number" id="bot_interval" value="15" min="5" max="300" step="1">
+            </div>
+            <button class="btn btn-blue" onclick="startRandomBot()">▶️ Démarrer</button>
+            <button class="btn btn-red" onclick="stopRandomBot()">⏹️ Arrêter</button>
+        </div>
+        <div class="msg" id="bot_msg"></div>
+        <table style="margin-top:12px;">
+            <thead>
+                <tr>
+                    <th>Compte</th>
+                    <th>Intervalle</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="bots_active_body">
+                <tr><td colspan="4" class="text-center" style="color:#888;">Aucun robot actif</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== MARKET MAKERS ===== -->
+    <div class="card">
+        <h2>🏦 Bots Market Makers</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Bot</th>
+                    <th>Spread</th>
+                    <th>Niveaux</th>
+                    <th>Intervalle</th>
+                    <th>Cash</th>
+                    <th>FIX</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody id="mm_body">
+                <tr><td colspan="7" class="text-center" style="color:#888;">Chargement...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== TOUS LES UTILISATEURS ===== -->
+    <div class="card">
+        <h2>👥 Tous les comptes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Rôle</th>
+                    <th>Cash ($)</th>
+                    <th>FIX</th>
+                    <th>Valeur totale ($)</th>
+                    <th>Robot</th>
+                </tr>
+            </thead>
+            <tbody id="users_body">
+                <tr><td colspan="7" class="text-center" style="color:#888;">Chargement...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    let activeBots = {};
+
+    async function init() {
+        const r = await fetch("/api/me");
+        const d = await r.json();
+        if (!d.success || d.user.role !== "admin") { window.location.href = "/"; return; }
+        document.getElementById("header_user").textContent = "👤 " + d.user.username;
+        await refreshAll();
+    }
+
+    async function doLogout() {
+        await fetch("/api/logout", {method: "POST"});
+        window.location.href = "/";
+    }
+
+    async function refreshAll() {
+        const [marketR, usersR, botsR] = await Promise.all([
+            fetch("/api/market"),
+            fetch("/api/admin/users"),
+            fetch("/api/admin/random_bots")
+        ]);
+        const marketD = await marketR.json();
+        const usersD = await usersR.json();
+        const botsD = await botsR.json();
+
+        updateStats(marketD, usersD);
+        updateUsers(usersD);
+        updateBots(botsD);
+        updateMarketMakers(usersD);
+    }
+
+    // ========================
+    // STATISTIQUES
+    // ========================
+    function updateStats(marketD, usersD) {
+        const totalSupply = 1000000;
+        let totalFixCirculation = 0;
+        let totalUsd = 0;
+        let humanCount = 0;
+        let botMMCount = 0;
+        let totalTrades = (marketD.recent_trades || []).length;
+        let adminFees = 0;
+
+        if (usersD.users) {
+            for (const u of usersD.users) {
+                totalFixCirculation += (u.portfolio.assets.FIX || 0);
+                totalUsd += u.portfolio.cash;
+                if (!u.is_bot && u.username !== "reserve") humanCount++;
+                if (u.is_bot) botMMCount++;
+                if (u.username === "admin") {
+                    adminFees = u.portfolio.cash;
+                }
+            }
+        }
+
+        const lastPrice = marketD.last_price || 0.001;
+        const reserveFix = totalSupply - totalFixCirculation;
+
+        document.getElementById("stat_price").textContent = Number(lastPrice).toFixed(6) + " $";
+        document.getElementById("stat_supply").textContent = totalFixCirculation.toLocaleString() + " FIX";
+        document.getElementById("stat_total_fix").textContent = totalSupply.toLocaleString();
+        document.getElementById("stat_total_usd").textContent = totalUsd.toFixed(2) + " $";
+        document.getElementById("stat_users").textContent = humanCount;
+        document.getElementById("stat_bots").textContent = botMMCount;
+        document.getElementById("stat_trades").textContent = totalTrades;
+        document.getElementById("stat_fees").textContent = adminFees.toFixed(4) + " $";
+    }
+
+    // ========================
+    // UTILISATEURS
+    // ========================
+    function updateUsers(usersD) {
+        if (!usersD.users) return;
+
+        const lastPrice = document.getElementById("stat_price").textContent.replace(" $", "");
+        const price = parseFloat(lastPrice) || 0.001;
+
+        let html = "";
+        let options = "";
+        for (const u of usersD.users) {
+            const fixAmount = u.portfolio.assets.FIX || 0;
+            const cashAmount = u.portfolio.cash || 0;
+            const totalValue = cashAmount + (fixAmount * price);
+            const hasBot = activeBots[u.username] !== undefined;
+            const typeLabel = u.is_bot ? "🤖 Market Maker" : (u.username === "reserve" ? "🏦 Réserve" : "👤 Humain");
+
+            html += `<tr>
+                <td>${u.username} ${u.is_bot ? "🤖" : ""} ${u.username === "reserve" ? "🏦" : ""}</td>
+                <td style="color:#888;">${typeLabel}</td>
+                <td><span class="badge ${u.role==='admin'?'badge-info':'badge-success'}">${u.role}</span></td>
+                <td class="text-mono">${Number(cashAmount).toFixed(2)} $</td>
+                <td class="text-mono">${fixAmount.toLocaleString()}</td>
+                <td class="text-mono">${totalValue.toFixed(2)} $</td>
+                <td>
+                    ${hasBot 
+                        ? '<span class="badge badge-warning">🤖 Actif</span> <button class="btn-sm red" onclick="quickStopBot(\'' + u.username + '\')" style="margin-left:4px;">⏹</button>'
+                        : (u.is_bot || u.username === 'reserve' ? '<span class="badge" style="background:#222;color:#666;">--</span>' : '<button class="btn-sm green" onclick="quickStartBot(\'' + u.username + '\')">▶️ Lancer</button>')}
+                </td>
+            </tr>`;
+
+            if (!u.is_bot && u.username !== "reserve") {
+                options += `<option value="${u.username}">${u.username}</option>`;
+            }
+        }
+        document.getElementById("users_body").innerHTML = html;
+        document.getElementById("bot_user_select").innerHTML = 
+            '<option value="">-- Choisir un compte --</option>' + options;
+    }
+
+    // ========================
+    // BOTS ALÉATOIRES
+    // ========================
+    function updateBots(botsD) {
+        activeBots = {};
+        if (botsD.success && botsD.bots) {
+            for (const b of botsD.bots) {
+                activeBots[b.username] = b.interval;
+            }
+        }
+
+        const tbody = document.getElementById("bots_active_body");
+        const entries = Object.entries(activeBots);
+        if (entries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color:#888;">Aucun robot actif</td></tr>';
+        } else {
+            let html = "";
+            for (const [username, interval] of entries) {
+                html += `<tr>
+                    <td>${username}</td>
+                    <td class="text-mono">${interval}s</td>
+                    <td><span class="badge badge-success">● Actif</span></td>
+                    <td><button class="btn-sm red" onclick="quickStopBot('${username}')">⏹️ Arrêter</button></td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+    }
+
+    // ========================
+    // MARKET MAKERS
+    // ========================
+    function updateMarketMakers(usersD) {
+        if (!usersD.users) return;
+
+        const botUsers = usersD.users.filter(u => u.is_bot);
+        let html = "";
+        for (const b of botUsers) {
+            const fixAmount = b.portfolio.assets.FIX || 0;
+            const cashAmount = b.portfolio.cash || 0;
+            html += `<tr>
+                <td>${b.username} 🤖</td>
+                <td>5%</td>
+                <td>5 niveaux</td>
+                <td>10s</td>
+                <td class="text-mono">${Number(cashAmount).toFixed(2)} $</td>
+                <td class="text-mono">${fixAmount.toLocaleString()}</td>
+                <td><span class="badge badge-success">● Actif</span></td>
+            </tr>`;
+        }
+        document.getElementById("mm_body").innerHTML = html || 
+            '<tr><td colspan="7" class="text-center" style="color:#888;">Aucun market maker</td></tr>';
+    }
+
+    // ========================
+    // ROBOTS
+    // ========================
+    async function startRandomBot() {
+        const username = document.getElementById("bot_user_select").value;
+        const interval = parseInt(document.getElementById("bot_interval").value) || 15;
+        if (!username) { showMsg("bot_msg", "❌ Choisis un compte", "#f6465d"); return; }
+        const r = await fetch("/api/admin/start_random_bot", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username, interval})
+        });
+        const d = await r.json();
+        showMsg("bot_msg", d.success ? `✅ ${d.message}` : `❌ ${d.error}`, d.success ? "#0ecb81" : "#f6465d");
+        if (d.success) await refreshAll();
+    }
+
+    async function stopRandomBot() {
+        const username = document.getElementById("bot_user_select").value;
+        if (!username) {
+            const keys = Object.keys(activeBots);
+            if (keys.length === 0) { showMsg("bot_msg", "❌ Aucun robot actif", "#f6465d"); return; }
+            await stopBot(keys[0]);
+            return;
+        }
+        await stopBot(username);
+    }
+
+    async function stopBot(username) {
+        const r = await fetch("/api/admin/stop_random_bot", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username})
+        });
+        const d = await r.json();
+        showMsg("bot_msg", d.success ? `✅ ${d.message}` : `❌ ${d.error}`, d.success ? "#0ecb81" : "#f6465d");
+        if (d.success) await refreshAll();
+    }
+
+    function quickStartBot(username) {
+        document.getElementById("bot_user_select").value = username;
+        startRandomBot();
+    }
+
+    function quickStopBot(username) {
+        stopBot(username);
+    }
+
+    // ========================
+    // FONDS
+    // ========================
+    function showMsg(elId, text, color) {
+        const el = document.getElementById(elId);
+        el.innerHTML = `<span style="color:${color};">${text}</span>`;
+        setTimeout(() => { el.innerHTML = ""; }, 4000);
+    }
+
+    async function addCash() {
+        const u = document.getElementById("target_user").value.trim().toLowerCase();
+        const a = parseFloat(document.getElementById("cash_amount").value);
+        if (!u || !a || a <= 0) { showMsg("admin_msg", "❌ Champs invalides", "#f6465d"); return; }
+        const r = await fetch("/api/admin/add_cash", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username: u, amount: a})
+        });
+        const d = await r.json();
+        showMsg("admin_msg", d.success ? `✅ ${d.message}` : `❌ ${d.error}`, d.success ? "#0ecb81" : "#f6465d");
+        if (d.success) refreshAll();
+    }
+
+    async function addFix() {
+        const u = document.getElementById("target_user").value.trim().toLowerCase();
+        const q = parseInt(document.getElementById("fix_amount").value);
+        if (!u || !q || q <= 0) { showMsg("admin_msg", "❌ Champs invalides", "#f6465d"); return; }
+        const r = await fetch("/api/admin/add_assets", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username: u, quantity: q})
+        });
+        const d = await r.json();
+        showMsg("admin_msg", d.success ? `✅ ${d.message}` : `❌ ${d.error}`, d.success ? "#0ecb81" : "#f6465d");
+        if (d.success) refreshAll();
+    }
+
+    init();
+    setInterval(refreshAll, 10000);
+</script>
+
+</body>
+</html>

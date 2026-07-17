@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement en FIX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e8e8e8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .payment-card {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 440px;
+            width: 100%;
+        }
+        .payment-card .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .payment-card .logo .accent { color: #0ecb81; }
+        .payment-card .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .payment-card .product {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .payment-card .product .img {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .payment-card .product .img img { width: 100%; height: 100%; object-fit: cover; }
+        .payment-card .product .info { flex: 1; }
+        .payment-card .product .info .name { font-weight: 600; font-size: 16px; color: #fff; }
+        .payment-card .product .info .desc { font-size: 13px; color: #888; }
+        .payment-card .product .info .amount { font-size: 20px; font-weight: 700; color: #f0b90b; margin-top: 4px; }
+
+        .info-box {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .info-box .icon {
+            width: 18px;
+            height: 18px;
+            stroke: #888;
+            stroke-width: 2;
+            fill: none;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .info-box .text { font-size: 12px; color: #888; line-height: 1.5; }
+        .info-box .text strong { color: #fff; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        .form-group label .required { color: #f6465d; margin-left: 2px; }
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: #0ecb81; }
+        .form-group input::placeholder { color: #444; }
+        .form-group .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .form-group .input-with-icon input {
+            padding-right: 44px;
+        }
+        .form-group .input-with-icon .toggle-password {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .form-group .input-with-icon .toggle-password:hover {
+            color: #fff;
+        }
+        .form-group .input-with-icon .toggle-password svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            fill: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-gold { background: #f0b90b; color: #000; }
+        .btn-gold:hover { background: #f5c81b; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-green { background: #0ecb81; color: #000; }
+        .btn-green:hover { background: #0dd68a; }
+        .btn .icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .msg { text-align: center; font-size: 13px; margin-top: 10px; min-height: 18px; font-weight: 500; }
+        .msg.error { color: #f6465d; }
+        .msg.success { color: #0ecb81; }
+
+        .success-icon {
+            width: 56px;
+            height: 56px;
+            stroke: #0ecb81;
+            stroke-width: 1.5;
+            fill: none;
+            margin: 0 auto 10px;
+            display: block;
+        }
+        .success-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0ecb81;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .success-sub {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 480px) {
+            .payment-card { padding: 20px; }
+            .payment-card .product { flex-direction: column; text-align: center; }
+            .payment-card .product .img { width: 72px; height: 72px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="payment-card">
+    <div class="logo"><span class="accent">FIX</span>/USD</div>
+    <div class="subtitle">Paiement sécurisé en FIX</div>
+
+    <!-- ===== PRODUIT ===== -->
+    <div class="product" id="productInfo">
+        <div class="img" id="productImg">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                <line x1="8" y1="2" x2="8" y2="22"/>
+                <line x1="16" y1="2" x2="16" y2="22"/>
+                <line x1="2" y1="8" x2="22" y2="8"/>
+                <line x1="2" y1="16" x2="22" y2="16"/>
+            </svg>
+        </div>
+        <div class="info">
+            <div class="name" id="productName">Chargement...</div>
+            <div class="desc" id="productDesc">--</div>
+            <div class="amount" id="productAmount">-- FIX</div>
+        </div>
+    </div>
+
+    <!-- ===== FORMULAIRE ===== -->
+    <div id="formSection">
+        <div class="info-box">
+            <svg class="icon" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="12" x2="12" y2="16"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span class="text">
+                Vous allez payer <strong id="payAmount">--</strong> FIX.<br>
+                Le montant sera débité de votre portefeuille.
+            </span>
+        </div>
+
+        <div class="form-group">
+            <label>Nom d'utilisateur <span class="required">*</span></label>
+            <input type="text" id="payerUsername" placeholder="Entrez votre username" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+            <label>Mot de passe <span class="required">*</span></label>
+            <div class="input-with-icon">
+                <input type="password" id="payerPassword" placeholder="Entrez votre mot de passe" autocomplete="current-password">
+                <button class="toggle-password" onclick="togglePasswordVisibility()" type="button" title="Afficher/Masquer le mot de passe">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <button class="btn btn-gold" id="payBtn" onclick="submitPayment()">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+            </svg>
+            Payer en FIX
+        </button>
+        <div class="msg" id="formMsg"></div>
+    </div>
+
+    <!-- ===== SUCCÈS ===== -->
+    <div id="successSection" class="hidden">
+        <svg class="success-icon" viewBox="0 0 24 24">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <div class="success-title">Paiement réussi !</div>
+        <div class="success-sub">
+            Les FIX ont été transférés.<br>
+            Vous recevrez une confirmation par email.
+        </div>
+        <button class="btn btn-green" onclick="window.location.href='/dashboard'" style="margin-top:16px;">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path d="M3 12h18"/>
+                <path d="M18 9l3 3-3 3"/>
+                <path d="M3 9v6"/>
+            </svg>
+            Retour au marché
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // ============================================================
+    //  CHARGEMENT DU LIEN
+    // ============================================================
+    const linkId = window.location.pathname.split('/').pop();
+
+    async function loadPaymentLink() {
+        try {
+            const r = await fetch(`/api/payment-link/${linkId}`);
+            const d = await r.json();
+
+            if (!d.success) {
+                document.getElementById('productName').textContent = 'Lien invalide';
+                document.getElementById('productDesc').textContent = d.error || 'Ce lien n\'existe pas ou a expiré.';
+                document.getElementById('payBtn').disabled = true;
+                return;
+            }
+
+            const link = d.link;
+            document.getElementById('productName').textContent = link.name;
+            document.getElementById('productDesc').textContent = link.description;
+            document.getElementById('productAmount').textContent = link.amount + ' FIX';
+            document.getElementById('payAmount').textContent = link.amount;
+
+            if (link.image) {
+                document.getElementById('productImg').innerHTML = `<img src="${link.image}" alt="Product">`;
+            }
+
+        } catch (e) {
+            document.getElementById('productName').textContent = 'Erreur';
+            document.getElementById('productDesc').textContent = 'Impossible de charger le lien.';
+            document.getElementById('payBtn').disabled = true;
+        }
+    }
+
+    // ============================================================
+    //  AFFICHER/MASQUER LE MOT DE PASSE
+    // ============================================================
+    function togglePasswordVisibility() {
+        const input = document.getElementById('payerPassword');
+        const btn = document.querySelector('.toggle-password');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+            `;
+        } else {
+            input.type = 'password';
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            `;
+        }
+    }
+
+    // ============================================================
+    //  SOUMISSION AVEC MOT DE PASSE
+    // ============================================================
+    async function submitPayment() {
+        const username = document.getElementById('payerUsername').value.trim().toLowerCase();
+        const password = document.getElementById('payerPassword').value;
+        const msg = document.getElementById('formMsg');
+        const btn = document.getElementById('payBtn');
+
+        if (!username) {
+            msg.textContent = "Veuillez entrer votre nom d'utilisateur";
+            msg.className = "msg error";
+            return;
+        }
+
+        if (!password) {
+            msg.textContent = "Veuillez entrer votre mot de passe";
+            msg.className = "msg error";
+            return;
+        }
+
+        // Désactiver le bouton pendant le traitement
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg class="icon" viewBox="0 0 24 24" style="animation: spin 1s linear infinite;">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            Traitement en cours...
+        `;
+        msg.textContent = "⏳ Vérification des identifiants...";
+        msg.className = "msg";
+
+        // Ajouter l'animation de rotation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        try {
+            const r = await fetch(`/api/payment-link/${linkId}/pay`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    username: username,
+                    password: password 
+                })
+            });
+            const d = await r.json();
+
+            if (d.success) {
+                document.getElementById('formSection').classList.add('hidden');
+                document.getElementById('successSection').classList.remove('hidden');
+            } else {
+                msg.textContent = d.error || "Erreur lors du paiement";
+                msg.className = "msg error";
+                // Réactiver le bouton
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    Payer en FIX
+                `;
+            }
+        } catch (e) {
+            msg.textContent = "Erreur réseau. Veuillez réessayer.";
+            msg.className = "msg error";
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                Payer en FIX
+            `;
+        }
+    }
+
+    // ============================================================
+    //  ENTRÉE (touche Enter) pour soumettre
+    // ============================================================
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const formSection = document.getElementById('formSection');
+            if (!formSection.classList.contains('hidden')) {
+                submitPayment();
+            }
+        }
+    });
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    loadPaymentLink();
+</script>
+
+</body>
+</html>
