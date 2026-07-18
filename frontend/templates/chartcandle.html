@@ -425,7 +425,7 @@
 
         try {
             const interval = TF_MAP[timeframe] || 60;
-            const response = await fetch(`/api/candles/${timeframe}?limit=300`);
+            const response = await fetch(`/api/candles/${timeframe}?limit=30000`);
             
             if (!response.ok) throw new Error('API error: ' + response.status);
             const data = await response.json();
