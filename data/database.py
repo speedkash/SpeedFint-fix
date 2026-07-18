@@ -32,17 +32,35 @@ _db_lock = threading.Lock()
 
 
 def get_connection():
-    """Retourne une connexion à la base de données."""
+    """Retourne une connexion à la base de données avec retry."""
     if USE_SUPABASE:
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-        conn.autocommit = True
-        return conn
+        max_retries = 3
+        retry_delay = 2  # secondes
+        
+        for attempt in range(max_retries):
+            try:
+                conn = psycopg2.connect(
+                    DATABASE_URL,
+                    sslmode='require',
+                    connect_timeout=10,
+                    keepalives=1,
+                    keepalives_idle=30,
+                    keepalives_interval=10,
+                    keepalives_count=5
+                )
+                conn.autocommit = True
+                return conn
+            except Exception as e:
+                print(f"⚠️ Tentative {attempt+1}/{max_retries} échouée : {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                else:
+                    raise
     else:
         conn = sqlite3.connect(DB_PATH, timeout=10.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
         return conn
-
 
 def init_db():
     """Crée les tables si elles n'existent pas."""

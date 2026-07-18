@@ -2048,23 +2048,11 @@ def payment_page(link_id):
     return send_from_directory("frontend/templates", "payment_page.html")
 
 
-@app.route("/api/force-init", methods=["GET"])
-def force_init():
-    """Force la réinitialisation du système."""
-    try:
-        # Supprimer les utilisateurs
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM users")
-        conn.commit()
-        conn.close()
-        
-        # Réinitialiser
-        init_system()
-        
-        return jsonify({"success": True, "message": "Système réinitialisé avec succès"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+@app.route("/api/repair-session", methods=["GET"])
+def repair_session():
+    """Réinitialise uniquement la session Flask, pas la base."""
+    session.clear()
+    return jsonify({"success": True, "message": "Session réinitialisée"})
 
 # ============================================================
 #  DÉMARRAGE DE L'APPLICATION
