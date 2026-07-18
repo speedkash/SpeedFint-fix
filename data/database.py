@@ -283,6 +283,10 @@ def save_user(user):
         conn.commit()
         conn.close()
 
+def save_all_users(users_dict):
+    """Sauvegarde tous les utilisateurs."""
+    for user in users_dict.values():
+        save_user(user)
 
 def load_users():
     """Charge tous les utilisateurs."""
