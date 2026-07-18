@@ -2054,6 +2054,54 @@ def repair_session():
     session.clear()
     return jsonify({"success": True, "message": "Session réinitialisée"})
 
+@app.route("/api/create-default-users", methods=["GET"])
+def create_default_users():
+    """Crée les comptes par défaut sans supprimer les existants."""
+    global admin_user, next_user_id, users, users_by_id
+    
+    try:
+        # Vérifier si admin existe déjà
+        if "admin" in users:
+            return jsonify({"success": False, "error": "Les comptes existent déjà"}), 400
+        
+        # Créer admin
+        admin_user = User(ADMIN_USERNAME, ADMIN_PASSWORD, role="admin", user_id=1)
+        users[ADMIN_USERNAME] = admin_user
+        users_by_id[admin_user.user_id] = admin_user
+        next_user_id = 2
+        
+        # Créer bots
+        for i in range(1, 3):
+            bot_name = f"bot_{i}"
+            bot_user = User(bot_name, f"bot{i}_pass", role="user", is_bot=True, user_id=next_user_id)
+            users[bot_name] = bot_user
+            users_by_id[bot_user.user_id] = bot_user
+            next_user_id += 1
+        
+        # Créer réserve
+        reserve_user = User("reserve", "reserve_pass", role="user", user_id=next_user_id)
+        users["reserve"] = reserve_user
+        users_by_id[reserve_user.user_id] = reserve_user
+        next_user_id += 1
+        
+        # Allocations initiales
+        for name, alloc in INITIAL_ALLOCATION.items():
+            u = users.get(name)
+            if u:
+                u.portfolio.add_assets(SYMBOL, alloc.get("FIX", 0))
+                u.portfolio.add_cash(alloc.get("USD", 0.0))
+        
+        # Sauvegarder
+        save_all_users(users)
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Comptes créés : {len(users)} utilisateurs",
+            "users": list(users.keys())
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # ============================================================
 #  DÉMARRAGE DE L'APPLICATION
 # ============================================================
