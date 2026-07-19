@@ -254,33 +254,50 @@ def cancel_all_user_orders(user_id: int):
 # ------------------------------------------------------------------
 
 def init_system():
-    """Initialise le système : charge depuis la DB ou crée les comptes par défaut."""
+    """
+    Initialise le système : charge depuis la DB ou crée les comptes par défaut.
+    Cette fonction est appelée au démarrage de l'application.
+    """
     global admin_user, next_user_id, bots, users, users_by_id
 
+    # 1. Initialiser les tables si elles n'existent pas
     init_db()
 
-    # 🔥 FORCER le rechargement depuis la DB à chaque démarrage
+    # 2. Charger les utilisateurs depuis la base de données
     loaded_users, loaded_max_id = load_users()
 
+    # 3. Vérifier si des utilisateurs existent déjà
     if loaded_users and "admin" in loaded_users:
-        # Restaurer depuis la DB
+        # ✅ Cas normal : des comptes existent déjà en base
+        # On vide les dictionnaires globaux avant de les remplir
         users.clear()
         users_by_id.clear()
+        
+        # On restaure tous les utilisateurs chargés
         users.update(loaded_users)
         for u in users.values():
             users_by_id[u.user_id] = u
+        
+        # On définit le prochain ID disponible
         next_user_id = loaded_max_id + 1
+        
+        # On récupère le compte admin
         admin_user = users.get("admin")
-        print(f"[INIT] {len(users)} comptes chargés depuis la DB")
+        
+        print(f"[INIT] ✅ {len(users)} comptes chargés depuis la DB")
+        print(f"[INIT] 📌 Prochain ID disponible : {next_user_id}")
+        
     else:
-        # Première initialisation (création des comptes)
-        print("[INIT] Aucun compte trouvé, création...")
+        # 🆕 Premier démarrage : aucun compte en base
+        print("[INIT] 🆕 Aucun compte trouvé, création des comptes par défaut...")
+        
+        # Créer le compte admin (ID: 1)
         admin_user = User(ADMIN_USERNAME, ADMIN_PASSWORD, role="admin", user_id=1)
         users[ADMIN_USERNAME] = admin_user
         users_by_id[admin_user.user_id] = admin_user
         next_user_id = 2
 
-        # Créer bots
+        # Créer les bots (ID: 2, 3)
         for i in range(1, 3):
             bot_name = f"bot_{i}"
             bot_user = User(bot_name, f"bot{i}_pass", role="user", is_bot=True, user_id=next_user_id)
@@ -288,31 +305,34 @@ def init_system():
             users_by_id[bot_user.user_id] = bot_user
             next_user_id += 1
 
-        # Créer réserve
+        # Créer le compte réserve (ID: 4)
         reserve_user = User("reserve", "reserve_pass", role="user", user_id=next_user_id)
         users["reserve"] = reserve_user
         users_by_id[reserve_user.user_id] = reserve_user
         next_user_id += 1
 
-        # Allocations initiales
+        # Allouer les FIX et USD initiaux
         for name, alloc in INITIAL_ALLOCATION.items():
             u = users.get(name)
             if u:
                 u.portfolio.add_assets(SYMBOL, alloc.get("FIX", 0))
                 u.portfolio.add_cash(alloc.get("USD", 0.0))
 
-        # Sauvegarder
+        # Sauvegarder tous les comptes dans la base
         save_all_users(users)
-        print(f"[INIT] {len(users)} comptes créés")
+        print(f"[INIT] ✅ {len(users)} comptes créés")
 
-    # Restaurer le dernier prix
+    # 4. Restaurer le dernier prix depuis l'historique des trades
     db_trades = load_trades()
     if db_trades:
         last_price = db_trades[-1]["price"]
         engine._last_price = last_price
-        print(f"[INIT] Dernier prix restauré : {last_price:.6f} $")
+        print(f"[INIT] 📊 Dernier prix restauré : {last_price:.6f} $")
 
-    # Démarrer les bots
+    # 5. Démarrer les bots Market Maker
+    # On vide la liste des bots avant de les recréer
+    bots = []
+    
     for i in range(1, 3):
         bot_name = f"bot_{i}"
         bot_user = users.get(bot_name)
@@ -324,13 +344,18 @@ def init_system():
                 min_qty=BOT_MIN_QTY,
                 max_qty=BOT_MAX_QTY
             )
+            # Injection des dépendances
             bot.get_last_price = engine.get_last_price
             bot.place_order = place_order_internal
             bot.cancel_all_orders = cancel_all_user_orders
+            
             bots.append(bot)
             bot.start()
+            print(f"[INIT] 🤖 Bot {bot_name} démarré")
 
-    print(f"[INIT] {len(users)} comptes, {len(bots)} bots actifs")
+    # 6. Résumé final
+    active_bots = len([b for b in bots if b.running])
+    print(f"[INIT] 🎯 Système prêt : {len(users)} comptes, {active_bots} bots actifs")
 
 
 def place_order_internal(user_id: int, username: str,

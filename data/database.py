@@ -307,19 +307,25 @@ def save_all_users(users_dict):
         save_user(user)
 
 def load_users():
-    """Charge tous les utilisateurs."""
+    """Charge tous les utilisateurs depuis la base de données."""
     from users.user import User
     from users.portfolio import Portfolio
 
     with _db_lock:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users")
+        
+        if USE_SUPABASE:
+            cursor.execute("SELECT * FROM users ORDER BY id")
+        else:
+            cursor.execute("SELECT * FROM users ORDER BY id")
+            
         rows = cursor.fetchall()
         conn.close()
 
     users = {}
     max_id = 0
+    
     for row in rows:
         user = User.__new__(User)
         
@@ -352,10 +358,11 @@ def load_users():
         user.portfolio = portfolio
 
         users[user.username] = user
-        max_id = max(max_id, user.user_id)
+        
+        if user.user_id > max_id:
+            max_id = user.user_id
 
     return users, max_id
-
 
 # ============================================================
 #  FONCTIONS TRADES
