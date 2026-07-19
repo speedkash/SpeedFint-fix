@@ -7,7 +7,7 @@ import time  # Ajoute cette ligne avec les autres imports
 import threading
 from flask import Flask, request, jsonify, session
 from flask_socketio import SocketIO, emit
-from data.database import init_db, save_user, save_all_users, load_users, save_trade, load_trades, get_connection
+from data.database import init_db, save_user, save_all_users, load_users, save_trade, load_trades
 
 from core import (
     Order, OrderSide, OrderType, OrderStatus,
@@ -201,59 +201,16 @@ def get_market_data() -> dict:
     }
 
 def get_current_user() -> User:
-    """Récupère l'utilisateur connecté depuis la session, avec fallback sur la DB."""
+    """Récupère l'utilisateur connecté depuis la session."""
     username = session.get("username")
     if not username:
         raise AuthenticationError("Non connecté")
     
-    # 🔥 1. Essayer de récupérer depuis le cache (users)
     user = users.get(username)
-    if user:
-        return user
-    
-    # 🔥 2. Fallback : charger directement depuis Supabase
-    from data.database import get_connection
-    import psycopg2.extras
-    
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        
-        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            raise UserNotFoundError(f"Utilisateur {username} introuvable en base")
-        
-        # Reconstruire l'utilisateur
-        from users.user import User
-        from users.portfolio import Portfolio
-        
-        user = User.__new__(User)
-        user.user_id = row["id"]
-        user.username = row["username"]
-        user.password_hash = row["password_hash"]
-        user.role = row["role"]
-        user.is_bot = bool(row["is_bot"])
-        
-        portfolio = Portfolio(user.user_id, user.username)
-        portfolio.cash = row["cash"]
-        portfolio.assets["FIX"] = row["fix_assets"]
-        portfolio.blocked_assets["FIX"] = row["fix_blocked"]
-        portfolio.blocked_cash = row["cash_blocked"]
-        user.portfolio = portfolio
-        
-        # Ajouter au cache pour les prochaines fois
-        users[username] = user
-        users_by_id[user.user_id] = user
-        
-        print(f"[AUTH] ✅ Utilisateur {username} rechargé depuis la DB")
-        return user
-        
-    except Exception as e:
-        print(f"[AUTH] ❌ Erreur chargement {username} depuis DB: {e}")
+    if not user:
         raise UserNotFoundError(f"Utilisateur {username} introuvable")
+    
+    return user
 
 def get_user_by_id(user_id: int) -> User:
     """Récupère un utilisateur par son ID."""
@@ -512,66 +469,23 @@ def api_register():
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    """Connexion avec vérification directe en base."""
+    """Connexion."""
     data = request.json or {}
     username = data.get("username", "").strip().lower()
     password = data.get("password", "")
 
-    # 🔥 Vérifier d'abord si l'utilisateur existe en base
-    from data.database import get_connection
-    import psycopg2.extras
-    
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            return jsonify({"success": False, "error": "Identifiants invalides"}), 401
-        
-        # Reconstruire l'utilisateur
-        from users.user import User
-        from users.portfolio import Portfolio
-        
-        user = User.__new__(User)
-        user.user_id = row["id"]
-        user.username = row["username"]
-        user.password_hash = row["password_hash"]
-        user.role = row["role"]
-        user.is_bot = bool(row["is_bot"])
-        
-        portfolio = Portfolio(user.user_id, user.username)
-        portfolio.cash = row["cash"]
-        portfolio.assets["FIX"] = row["fix_assets"]
-        portfolio.blocked_assets["FIX"] = row["fix_blocked"]
-        portfolio.blocked_cash = row["cash_blocked"]
-        user.portfolio = portfolio
-        
-        # Vérifier le mot de passe
-        if not user.check_password(password):
-            return jsonify({"success": False, "error": "Identifiants invalides"}), 401
-        
-        # Ajouter au cache
-        users[username] = user
-        users_by_id[user.user_id] = user
-        
-        # Créer la session
-        session["username"] = username
-        session["user_id"] = user.user_id
-        
-        print(f"[LOGIN] ✅ {username} connecté (ID: {user.user_id})")
-        
-        return jsonify({
-            "success": True,
-            "message": "Connecté",
-            "user": user.to_dict()
-        })
-        
-    except Exception as e:
-        print(f"[LOGIN] ❌ Erreur: {e}")
-        return jsonify({"success": False, "error": "Erreur serveur"}), 500
+    user = users.get(username)
+    if not user or not user.check_password(password):
+        return jsonify({"success": False, "error": "Identifiants invalides"}), 401
+
+    session["username"] = username
+    session["user_id"] = user.user_id
+
+    return jsonify({
+        "success": True,
+        "message": "Connecté",
+        "user": user.to_dict()
+    })
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
