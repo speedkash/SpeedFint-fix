@@ -255,15 +255,17 @@ def cancel_all_user_orders(user_id: int):
 
 def init_system():
     """Initialise le système : charge depuis la DB ou crée les comptes par défaut."""
-    global admin_user, next_user_id, bots
+    global admin_user, next_user_id, bots, users, users_by_id
 
     init_db()
 
-    # Tenter de charger depuis la DB
+    # 🔥 FORCER le rechargement depuis la DB à chaque démarrage
     loaded_users, loaded_max_id = load_users()
 
     if loaded_users and "admin" in loaded_users:
         # Restaurer depuis la DB
+        users.clear()
+        users_by_id.clear()
         users.update(loaded_users)
         for u in users.values():
             users_by_id[u.user_id] = u
@@ -271,7 +273,8 @@ def init_system():
         admin_user = users.get("admin")
         print(f"[INIT] {len(users)} comptes chargés depuis la DB")
     else:
-        # Première initialisation
+        # Première initialisation (création des comptes)
+        print("[INIT] Aucun compte trouvé, création...")
         admin_user = User(ADMIN_USERNAME, ADMIN_PASSWORD, role="admin", user_id=1)
         users[ADMIN_USERNAME] = admin_user
         users_by_id[admin_user.user_id] = admin_user
@@ -300,9 +303,9 @@ def init_system():
 
         # Sauvegarder
         save_all_users(users)
-        print(f"[INIT] Système initialisé : {len(users)} comptes créés")
+        print(f"[INIT] {len(users)} comptes créés")
 
-    # --- Restaurer le dernier prix depuis l'historique ---
+    # Restaurer le dernier prix
     db_trades = load_trades()
     if db_trades:
         last_price = db_trades[-1]["price"]
