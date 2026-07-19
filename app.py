@@ -331,6 +331,7 @@ def init_system():
 
     # 5. Démarrer les bots Market Maker
     # On vide la liste des bots avant de les recréer
+    global bots  # ← AJOUTER CETTE LIGNE
     bots = []
     
     for i in range(1, 3):
@@ -2082,50 +2083,65 @@ def repair_session():
     session.clear()
     return jsonify({"success": True, "message": "Session réinitialisée"})
 
-@app.route("/api/create-default-users", methods=["GET"])
-def create_default_users():
-    """Crée les comptes par défaut sans supprimer les existants."""
-    global admin_user, next_user_id, users, users_by_id
+@app.route("/api/bots/status", methods=["GET"])
+def api_bots_status():
+    """Vérifie l'état des bots Market Maker."""
+    global bots
+    
+    status = []
+    for bot in bots:
+        status.append({
+            "username": bot.user.username,
+            "running": bot.running,
+            "levels": bot.levels,
+            "spread": bot.spread_pct,
+            "interval": bot.interval
+        })
+    
+    return jsonify({
+        "success": True,
+        "bots": status,
+        "total": len(bots),
+        "active": len([b for b in bots if b.running])
+    })
+
+@app.route("/api/bots/restart", methods=["POST"])
+def api_restart_bots():
+    """Redémarre les bots Market Maker."""
+    global bots
     
     try:
-        # Vérifier si admin existe déjà
-        if "admin" in users:
-            return jsonify({"success": False, "error": "Les comptes existent déjà"}), 400
+        # Arrêter les bots existants
+        for bot in bots:
+            if bot.running:
+                bot.stop()
         
-        # Créer admin
-        admin_user = User(ADMIN_USERNAME, ADMIN_PASSWORD, role="admin", user_id=1)
-        users[ADMIN_USERNAME] = admin_user
-        users_by_id[admin_user.user_id] = admin_user
-        next_user_id = 2
+        # Vider la liste
+        bots = []
         
-        # Créer bots
+        # Recréer les bots
         for i in range(1, 3):
             bot_name = f"bot_{i}"
-            bot_user = User(bot_name, f"bot{i}_pass", role="user", is_bot=True, user_id=next_user_id)
-            users[bot_name] = bot_user
-            users_by_id[bot_user.user_id] = bot_user
-            next_user_id += 1
-        
-        # Créer réserve
-        reserve_user = User("reserve", "reserve_pass", role="user", user_id=next_user_id)
-        users["reserve"] = reserve_user
-        users_by_id[reserve_user.user_id] = reserve_user
-        next_user_id += 1
-        
-        # Allocations initiales
-        for name, alloc in INITIAL_ALLOCATION.items():
-            u = users.get(name)
-            if u:
-                u.portfolio.add_assets(SYMBOL, alloc.get("FIX", 0))
-                u.portfolio.add_cash(alloc.get("USD", 0.0))
-        
-        # Sauvegarder
-        save_all_users(users)
+            bot_user = users.get(bot_name)
+            if bot_user:
+                bot = MarketMakerBot(
+                    user=bot_user,
+                    spread_pct=BOT_SPREAD_PCT,
+                    interval_seconds=BOT_INTERVAL_SECONDS,
+                    min_qty=BOT_MIN_QTY,
+                    max_qty=BOT_MAX_QTY
+                )
+                bot.get_last_price = engine.get_last_price
+                bot.place_order = place_order_internal
+                bot.cancel_all_orders = cancel_all_user_orders
+                
+                bots.append(bot)
+                bot.start()
+                print(f"[BOT] 🤖 {bot_name} redémarré")
         
         return jsonify({
-            "success": True, 
-            "message": f"Comptes créés : {len(users)} utilisateurs",
-            "users": list(users.keys())
+            "success": True,
+            "message": f"Bots redémarrés : {len(bots)} actifs"
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
