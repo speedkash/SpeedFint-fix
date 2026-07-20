@@ -403,12 +403,14 @@
 
 </div>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
+    // ============================================================
+    //  PAS DE WEBSOCKET !!! TOUT EN HTTP
+    // ============================================================
+
     // ============================================================
     //  CONFIGURATION
     // ============================================================
-    const socket = io();
     let allTrades = [];
     let filteredTrades = [];
     let currentPage = 1;
@@ -416,6 +418,7 @@
     let sortField = 'time';
     let sortAsc = false;
     let currentUser = null;
+    let refreshInterval = null;
 
     // ============================================================
     //  AUTH
@@ -436,8 +439,12 @@
                     document.getElementById("admin_btn").style.display = "inline-block";
                 }
                 document.getElementById("logout_btn").style.display = "inline-block";
+                return d.user;
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("❌ loadUserInfo error:", e);
+        }
+        return null;
     }
 
     // ============================================================
@@ -448,11 +455,15 @@
             const r = await fetch("/api/trades");
             const data = await r.json();
             
-            if (Array.isArray(data)) {
-
-                const reversed = data.reverse();
-               
-                allTrades = data.map(t => ({
+            if (Array.isArray(data) && data.length > 0) {
+                // Trier par timestamp décroissant (plus récent en premier)
+                const sorted = data.sort((a, b) => {
+                    const dateA = new Date(a.timestamp || 0).getTime();
+                    const dateB = new Date(b.timestamp || 0).getTime();
+                    return dateB - dateA;
+                });
+                
+                allTrades = sorted.map(t => ({
                     ...t,
                     type: t.buyer === currentUser?.username ? 'buy' : 'sell'
                 }));
@@ -460,9 +471,17 @@
                 applyFilters();
                 updateStats();
                 renderTable();
+            } else {
+                allTrades = [];
+                filteredTrades = [];
+                renderTable();
+                updateStats();
             }
         } catch(e) {
-            console.error('Erreur chargement trades:', e);
+            console.error('❌ Erreur chargement trades:', e);
+            document.getElementById('tradesBody').innerHTML = `
+                <tr><td colspan="7"><div class="empty-state">Erreur de chargement des transactions</div></td></tr>
+            `;
         }
     }
 
@@ -523,7 +542,15 @@
         }
 
         document.querySelectorAll('th').forEach(th => th.classList.remove('active'));
-        const th = document.getElementById('sort' + field.charAt(0).toUpperCase() + field.slice(1));
+        const thMap = {
+            time: 'sortTime',
+            buyer: 'sortBuyer',
+            seller: 'sortSeller',
+            price: 'sortPrice',
+            quantity: 'sortQty',
+            total: 'sortTotal'
+        };
+        const th = document.getElementById(thMap[field]);
         if (th) th.classList.add('active');
 
         filteredTrades.sort((a, b) => {
@@ -540,72 +567,72 @@
         renderTable();
     }
 
-// ============================================================
-//  ANONYMISATION
-// ============================================================
-function anonymizeUser(username, userId) {
-    // Les bots restent visibles
-    if (username && username.startsWith('bot_')) {
-        return username;
+    // ============================================================
+    //  ANONYMISATION
+    // ============================================================
+    function anonymizeUser(username, userId) {
+        // Les bots restent visibles
+        if (username && username.startsWith('bot_')) {
+            return username;
+        }
+        // Admin et utilisateurs normaux → anonymisés
+        if (username) {
+            return 'user_' + String(userId || 0).padStart(4, '0') + '****';
+        }
+        return '--';
     }
-    // Admin et utilisateurs normaux → anonymisés
-    if (username) {
-        return 'user_' + String(userId).padStart(4, '0') + '****';
-    }
-    return '--';
-}
 
-// ============================================================
-//  RENDU
-// ============================================================
-function renderTable() {
-    const tbody = document.getElementById('tradesBody');
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = Math.min(start + itemsPerPage, filteredTrades.length);
-    const pageItems = filteredTrades.slice(start, end);
+    // ============================================================
+    //  RENDU
+    // ============================================================
+    function renderTable() {
+        const tbody = document.getElementById('tradesBody');
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = Math.min(start + itemsPerPage, filteredTrades.length);
+        const pageItems = filteredTrades.slice(start, end);
 
-    if (pageItems.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">Aucune transaction trouvée</div></td></tr>`;
+        if (pageItems.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">Aucune transaction trouvée</div></td></tr>`;
+            updatePagination();
+            return;
+        }
+
+        let html = '';
+        for (const t of pageItems) {
+            const isBuy = t.buyer === currentUser?.username;
+            const typeClass = isBuy ? 'buy' : 'sell';
+            const typeLabel = isBuy ? 'ACHAT' : 'VENTE';
+            const priceClass = isBuy ? 'price-buy' : 'price-sell';
+            const time = new Date(t.timestamp).toLocaleString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            // 🔥 ANONYMISATION
+            const buyerDisplay = anonymizeUser(t.buyer, t.buyer_id);
+            const sellerDisplay = anonymizeUser(t.seller, t.seller_id);
+
+            // 🔥 Mettre en évidence les trades de l'utilisateur connecté
+            const isMyTrade = t.buyer === currentUser?.username || t.seller === currentUser?.username;
+            const myClass = isMyTrade ? ' style="background:rgba(14,203,129,0.05);"' : '';
+
+            html += `<tr${myClass}>
+                <td class="text-muted">${time}</td>
+                <td class="user-anon">${buyerDisplay}</td>
+                <td class="user-anon">${sellerDisplay}</td>
+                <td class="${priceClass}">${Number(t.price).toFixed(6)}</td>
+                <td>${t.quantity.toLocaleString()}</td>
+                <td>${Number(t.total || t.price * t.quantity).toFixed(4)}</td>
+                <td class="text-center"><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+            </tr>`;
+        }
+        tbody.innerHTML = html;
         updatePagination();
-        return;
     }
-
-    let html = '';
-    for (const t of pageItems) {
-        const isBuy = t.buyer === currentUser?.username;
-        const typeClass = isBuy ? 'buy' : 'sell';
-        const typeLabel = isBuy ? 'ACHAT' : 'VENTE';
-        const priceClass = isBuy ? 'price-buy' : 'price-sell';
-        const time = new Date(t.timestamp).toLocaleString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-
-        // 🔥 ANONYMISATION
-        const buyerDisplay = anonymizeUser(t.buyer, t.buyer_id);
-        const sellerDisplay = anonymizeUser(t.seller, t.seller_id);
-
-        // 🔥 Mettre en évidence les trades de l'utilisateur connecté
-        const isMyTrade = t.buyer === currentUser?.username || t.seller === currentUser?.username;
-        const myClass = isMyTrade ? ' style="background:rgba(14,203,129,0.05);"' : '';
-
-        html += `<tr${myClass}>
-            <td class="text-muted">${time}</td>
-            <td class="user-anon">${buyerDisplay}</td>
-            <td class="user-anon">${sellerDisplay}</td>
-            <td class="${priceClass}">${Number(t.price).toFixed(6)}</td>
-            <td>${t.quantity.toLocaleString()}</td>
-            <td>${Number(t.total || t.price * t.quantity).toFixed(4)}</td>
-            <td class="text-center"><span class="type-badge ${typeClass}">${typeLabel}</span></td>
-        </tr>`;
-    }
-    tbody.innerHTML = html;
-    updatePagination();
-}
 
     function updateStats() {
         document.getElementById('totalTrades').textContent = filteredTrades.length;
@@ -673,36 +700,26 @@ function renderTable() {
     }
 
     // ============================================================
-    //  WEBSOCKET - TEMPS RÉEL
-    // ============================================================
-    socket.on("connect", () => {
-        console.log("WebSocket connecté");
-    });
-
-    socket.on("trade", (trade) => {
-        if (!trade) return;
-        const newTrade = {
-            ...trade,
-            type: trade.buyer === currentUser?.username ? 'buy' : 'sell'
-        };
-        allTrades.unshift(newTrade);
-        if (allTrades.length > 1000) allTrades.pop();
-        applyFilters();
-        updateStats();
-    });
-
-    // ============================================================
     //  INIT
     // ============================================================
     async function init() {
+        console.log("🚀 Init explorer (sans WebSocket)");
+        
         await loadUserInfo();
         await loadTrades();
 
-        // Rafraîchir toutes les 10 secondes
-        setInterval(() => {
+        // 🔥 Rafraîchir toutes les 10 secondes (au lieu de WebSocket)
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
+            console.log("🔄 Rafraîchissement automatique explorer");
             loadTrades();
-        }, 10000);
+        }, 100000);
     }
+
+    // Nettoyer l'intervalle si la page est fermée
+    window.addEventListener('beforeunload', () => {
+        if (refreshInterval) clearInterval(refreshInterval);
+    });
 
     init();
 </script>

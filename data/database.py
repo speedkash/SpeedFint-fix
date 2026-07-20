@@ -237,6 +237,14 @@ def load_trades(limit=None):
     with _db_lock:
         conn = get_connection()
         cursor = conn.cursor()
+        
+        # 🔥 Vérifier si la table trades existe
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='trades'")
+        if not cursor.fetchone():
+            # La table n'existe pas, retourner une liste vide
+            conn.close()
+            return []
+        
         if limit:
             cursor.execute("SELECT * FROM trades ORDER BY id DESC LIMIT ?", (limit,))
         else:

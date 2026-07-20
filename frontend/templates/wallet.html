@@ -398,19 +398,15 @@
     </a>
 </nav>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-    // ============================================================
-    //  SOCKET
-    // ============================================================
-    const socket = io();
-
     // ============================================================
     //  COMMUN
     // ============================================================
     let currentUser = null;
     let currentPrice = 0;
     let totalReference = null;
+
+    // PAS DE WEBSOCKET !!!
 
     async function doLogout() {
         await fetch("/api/logout", {method: "POST"});
@@ -429,9 +425,13 @@
                 }
                 return d.user;
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("❌ loadUserInfo:", e);
+        }
         return null;
     }
+
+    // ... (le reste du code identique)
 
     // ============================================================
     //  PRIX
@@ -648,45 +648,30 @@
         ]);
     }
 
-    // ============================================================
-    //  WEBSOCKET
-    // ============================================================
-    socket.on("connect", () => {
-        console.log("WebSocket connecté");
-    });
-
-    socket.on("market_update", (data) => {
-        if (data.last_price) {
-            currentPrice = data.last_price;
-            document.getElementById("ticker_price").textContent = Number(currentPrice).toFixed(6) + " $";
-            refreshWallet();
-        }
-    });
-
-    socket.on("trade", () => {
-        loadPrice();
-        refreshWallet();
-        refreshTrades();  // ← Mettre à jour les trades en temps réel
-    });
-
-    // ============================================================
-    //  INIT
-    // ============================================================
     async function init() {
+        console.log("🚀 Init wallet");
         currentUser = await loadUserInfo();
-        if (!currentUser) { window.location.href = "/"; return; }
+        if (!currentUser) { 
+            console.log("❌ Pas d'utilisateur, redirection vers /");
+            window.location.href = "/"; 
+            return; 
+        }
         
+        console.log("✅ Utilisateur:", currentUser.username);
         await loadPrice();
         await refreshAll();
 
+        // 🔥 Rafraîchir toutes les 5 secondes
         setInterval(() => {
+            console.log("🔄 Rafraîchissement automatique");
             loadPrice();
             refreshWallet();
-        }, 3000);
+            refreshOpenOrders();
+            refreshTrades();
+        }, 50000);
     }
 
     init();
 </script>
-
 </body>
 </html>

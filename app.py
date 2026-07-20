@@ -43,7 +43,15 @@ app = Flask(__name__,
             static_url_path='/static',
             template_folder=TEMPLATE_FOLDER)
 app.config["SECRET_KEY"] = SECRET_KEY
-socketio = SocketIO(app, cors_allowed_origins="*")
+
+
+# 🔥 Configuration SocketIO pour PythonAnywhere
+import os
+if os.environ.get('PYTHONANYWHERE'):
+    # Mode PythonAnywhere : mode threading
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+else:
+    socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ------------------------------------------------------------------
 # État global du marché
@@ -510,8 +518,9 @@ def api_me():
 @app.route("/api/market", methods=["GET"])
 def api_market():
     """Données publiques du marché."""
+    # 🔥 Désactiver WebSocket sur PythonAnywhere
+    # socketio.emit("book_update", get_market_data())
     return jsonify(get_market_data())
-
 
 @app.route("/api/book", methods=["GET"])
 def api_book():

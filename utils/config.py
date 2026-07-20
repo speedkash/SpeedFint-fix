@@ -28,8 +28,8 @@ FEE_ACCOUNT = "reserve"  # Les frais vont au compte admin
 # Bots
 # ------------------------------------------------------------------
 BOT_COUNT = 2
-BOT_SPREAD_PCT = 5.0         # Écart en % autour du prix
-BOT_INTERVAL_SECONDS = 10.0  # Délai entre deux cycles
+BOT_SPREAD_PCT = 3.0         # Écart en % autour du prix
+BOT_INTERVAL_SECONDS = 50.0  # Délai entre deux cycles
 BOT_MIN_QTY = 1_000
 BOT_MAX_QTY = 5_000
 

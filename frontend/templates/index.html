@@ -779,12 +779,10 @@
     </a>
 </nav>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
     // ============================================================
-    //  SOCKET
+    //  PAS DE WEBSOCKET !!! TOUT EN HTTP
     // ============================================================
-    const socket = io();
 
     // ============================================================
     //  VARIABLES
@@ -829,7 +827,9 @@
                 document.getElementById("admin_btn").style.display = "none";
                 document.getElementById("trade_btn").style.display = "none";
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("❌ loadUserInfo error:", e);
+        }
         return null;
     }
 
@@ -879,7 +879,9 @@
                     changeEl.className = "ticker-change up";
                 }
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("❌ loadPrice error:", e);
+        }
     }
 
     // ============================================================
@@ -1023,7 +1025,9 @@
                 document.getElementById("mm_dot").className = "status-dot " + (d.market_maker_active ? "active" : "inactive");
                 document.getElementById("mm_count").textContent = (d.market_maker_count || 0) + " bot" + (d.market_maker_count > 1 ? "s" : "");
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("❌ loadStats error:", e);
+        }
     }
 
     // ============================================================
@@ -1081,59 +1085,22 @@
                 }
                 tbody.innerHTML = html;
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("❌ loadTrades error:", e);
+        }
     }
 
     // ============================================================
-    //  WEBSOCKET EVENTS
+    //  REFRESH COMPLET
     // ============================================================
-    socket.on("connect", () => {
-        console.log("WebSocket connecté");
-    });
-
-    socket.on("market_update", (data) => {
-        if (data.last_price) {
-            currentPrice = data.last_price;
-            document.getElementById("ticker_price").textContent = Number(currentPrice).toFixed(6) + " $";
-            
-            let priceRef = getPriceReference();
-            if (priceRef === null) {
-                setPriceReference(currentPrice);
-                priceRef = currentPrice;
-            }
-            const changeEl = document.getElementById("ticker_change");
-            if (priceRef > 0) {
-                const change = ((currentPrice - priceRef) / priceRef) * 100;
-                if (change >= 0) {
-                    changeEl.textContent = "+" + change.toFixed(2) + "%";
-                    changeEl.className = "ticker-change up";
-                } else {
-                    changeEl.textContent = change.toFixed(2) + "%";
-                    changeEl.className = "ticker-change down";
-                }
-            }
-        }
-        if (data.recent_trades) {
-            loadTrades();
-        }
-    });
-
-    socket.on("trade", (t) => {
-        const time = new Date().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
-        const isBuy = t.buyer === currentUser?.username || Math.random() > 0.5;
-        const typeEmoji = isBuy ? "🟢" : "🔴";
-        addUpdate(
-            time,
-            `<span class="highlight-${isBuy ? '' : 'red'}">${t.quantity.toLocaleString()} FIX</span> @ <span class="highlight">${Number(t.price).toFixed(6)} $</span> ${typeEmoji}`,
-            "trade"
-        );
-        loadTrades();
-        loadStats();
-        // Rafraîchir le graphique
+    async function refreshAll() {
+        await loadPrice();
+        await loadStats();
+        await loadTrades();
         if (isChartReady) {
-            loadChartData(currentPeriod);
+            await loadChartData(currentPeriod);
         }
-    });
+    }
 
     // ============================================================
     //  AUTH
@@ -1239,10 +1206,10 @@
     //  INIT
     // ============================================================
     async function init() {
+        console.log("🚀 Init index.html (sans WebSocket)");
+        
         await loadUserInfo();
-        await loadPrice();
-        await loadStats();
-        await loadTrades();
+        await refreshAll();
 
         // Initialiser le graphique après un délai
         setTimeout(() => {
@@ -1262,21 +1229,17 @@
         }, 2500);
     }
 
-    // Mises à jour périodiques
+    // 🔥 Mises à jour périodiques
     setInterval(() => {
-        loadPrice();
-        if (currentUser) {
-            loadStats();
-            loadTrades();
-        }
-    }, 10000);
+        refreshAll();
+    }, 10000);  // Toutes les 10 secondes
 
-    // Rafraîchir le graphique toutes les 30s
+    // Rafraîchir le graphique plus souvent
     setInterval(() => {
         if (isChartReady && currentUser) {
             loadChartData(currentPeriod);
         }
-    }, 30000);
+    }, 30000);  // Toutes les 30 secondes
 
     init();
 </script>

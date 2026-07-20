@@ -587,7 +587,6 @@
     </a>
 </nav>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
     // ============================================================
     //  COMMUN
@@ -615,7 +614,7 @@
     // ============================================================
     //  DASHBOARD
     // ============================================================
-    const socket = io();
+    // PAS DE WEBSOCKET !!!
     let currentUser = null;
     let currentSide = "buy";
     let currentOrderType = "limit";
@@ -636,35 +635,6 @@
             }
         }
     } catch(e) {}
-
-    // ===== WEBSOCKET =====
-    socket.on("connect", () => {
-        console.log("WebSocket connecté");
-    });
-
-    socket.on("market_update", (data) => {
-        if (data.last_price) updatePrice(data.last_price);
-        if (data.book) updateBook(data.book);
-        if (data.recent_trades) {
-            data.recent_trades.forEach(t => addTradeRow(t, true));
-        }
-        if (data.spread != null) {
-            document.getElementById("book_spread").textContent = Number(data.spread).toFixed(6) + " USD";
-        }
-    });
-
-    socket.on("book_update", (data) => {
-        if (data.last_price) updatePrice(data.last_price);
-        if (data.book) updateBook(data.book);
-        if (data.spread != null) {
-            document.getElementById("book_spread").textContent = Number(data.spread).toFixed(6) + " USD";
-        }
-    });
-
-    socket.on("trade", (t) => {
-        addTradeRow(t);
-        refreshUserData();
-    });
 
     // ===== PRIX =====
     function updatePrice(price) {
@@ -696,76 +666,6 @@
         if (isInitialized) drawChart();
     }
 
-
-	// ============================================================
-	//  PRIX - AVEC PERSISTANCE
-	// ============================================================
-
-	// Récupérer la valeur de référence depuis localStorage
-	function getPriceReference() {
-	    try {
-	        const ref = localStorage.getItem("fix_price_reference");
-	        if (ref) {
-	            return parseFloat(ref);
-	        }
-	    } catch(e) {}
-	    return null;
-	}
-
-	// Sauvegarder la valeur de référence
-	function setPriceReference(price) {
-	    try {
-	        localStorage.setItem("fix_price_reference", price.toString());
-	    } catch(e) {}
-	}
-
-	// Mettre à jour le prix avec persistance
-	function updatePrice(price) {
-	    if (price === undefined || price === null) return;
-	    
-	    // Si c'est la première fois qu'on voit un prix, le définir comme référence
-	    let priceRef = getPriceReference();
-	    if (priceRef === null) {
-	        setPriceReference(price);
-	        priceRef = price;
-	    }
-	    
-	    lastPrice = price;
-	    document.getElementById("ticker_price").textContent = Number(price).toFixed(6) + " $";
-
-	    // Calcul de la variation depuis la référence
-	    const changeEl = document.getElementById("ticker_change");
-	    if (priceRef > 0) {
-	        const change = ((price - priceRef) / priceRef) * 100;
-	        if (change >= 0) {
-	            changeEl.textContent = "+" + change.toFixed(2) + "%";
-	            changeEl.className = "ticker-change up";
-	        } else {
-	            changeEl.textContent = change.toFixed(2) + "%";
-	            changeEl.className = "ticker-change down";
-	        }
-	    } else {
-	        changeEl.textContent = "0.00%";
-	        changeEl.className = "ticker-change up";
-	    }
-
-	    // Historique pour le graphique
-	    priceHistory.push({ time: Date.now(), price: price });
-	    if (priceHistory.length > 500) priceHistory.shift();
-	    try {
-	        localStorage.setItem("fix_priceHistory", JSON.stringify(priceHistory.slice(-100)));
-	    } catch(e) {}
-	    if (isInitialized) drawChart();
-	}
-
-	// Bouton pour réinitialiser la référence (optionnel)
-	function resetPriceReference() {
-	    if (lastPrice) {
-	        setPriceReference(lastPrice);
-	        updatePrice(lastPrice);
-	    }
-	}
- 
     // ===== ORDER BOOK =====
     function updateBook(book) {
         const bids = book.bids || [];
@@ -817,9 +717,7 @@
         bookView = view;
         document.querySelectorAll(".col:first-child .tabs .tab").forEach(t => t.classList.remove("active"));
         if (btn) btn.classList.add("active");
-        fetch("/api/market").then(r => r.json()).then(d => {
-            if (d.book) updateBook(d.book);
-        });
+        refreshMarketData();
     }
 
     // ===== GRAPHIQUE =====
@@ -946,6 +844,24 @@
         if (!batch) feed.scrollTop = 0;
     }
 
+    // ===== REFRESH MARKET DATA (NOUVEAU) =====
+    async function refreshMarketData() {
+        try {
+            const r = await fetch("/api/market");
+            const d = await r.json();
+            if (d.last_price) updatePrice(d.last_price);
+            if (d.book) updateBook(d.book);
+            if (d.recent_trades) {
+                d.recent_trades.forEach(t => addTradeRow(t, true));
+            }
+            if (d.spread != null) {
+                document.getElementById("book_spread").textContent = Number(d.spread).toFixed(6) + " USD";
+            }
+        } catch (e) {
+            console.error("❌ Erreur refreshMarketData:", e);
+        }
+    }
+
     // ===== TRADING =====
     function setSide(side) {
         currentSide = side;
@@ -1030,6 +946,7 @@
                     msg.innerHTML = '<span style="color:#f0b90b;">Ordre placé dans le carnet</span>';
                 }
                 refreshUserData();
+                refreshMarketData();
             } else {
                 msg.innerHTML = `<span style="color:#f6465d;">${d.error}</span>`;
             }
@@ -1062,23 +979,13 @@
         isInitialized = true;
         drawChart();
 
-        try {
-            const mr = await fetch("/api/market");
-            const md = await mr.json();
-            if (md.last_price) updatePrice(md.last_price);
-            if (md.book) updateBook(md.book);
-            if (md.recent_trades) {
-                md.recent_trades.forEach(t => addTradeRow(t, true));
-            }
-            if (md.spread != null) {
-                document.getElementById("book_spread").textContent = Number(md.spread).toFixed(6) + " USD";
-            }
-        } catch(e) {}
-    }
+        await refreshMarketData();
 
-    setInterval(() => {
-        refreshUserData();
-    }, 5000);
+        setInterval(() => {
+            refreshUserData();
+            refreshMarketData();
+        }, 50000);
+    }
 
     init();
 </script>

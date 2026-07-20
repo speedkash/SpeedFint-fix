@@ -265,12 +265,10 @@
 
 </div>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
     // ============================================================
-    //  SOCKET
+    //  PAS DE WEBSOCKET !!! TOUT EN HTTP
     // ============================================================
-    const socket = io();
 
     // ============================================================
     //  CONFIGURATION
@@ -308,7 +306,9 @@
                     document.getElementById("admin_btn").style.display = "inline-block";
                 }
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("❌ loadUserInfo error:", e);
+        }
     }
 
     // ============================================================
@@ -322,7 +322,9 @@
                 currentPrice = d.last_price;
                 updatePriceDisplay();
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error("❌ loadPrice error:", e);
+        }
     }
 
     function updatePriceDisplay() {
@@ -462,7 +464,6 @@
                 }
             } else {
                 console.warn('⚠️ Aucune donnée reçue');
-                // Ne pas générer de fausses données
             }
         } catch (err) {
             console.error('❌ Erreur:', err);
@@ -504,10 +505,9 @@
             };
         });
 
-        // Supprimer les doublons (garder le dernier)
+        // Supprimer les doublons
         const uniqueMap = new Map();
         aligned.forEach(c => {
-            // Si on a déjà une bougie à ce timestamp, on garde celle avec le plus grand volume ou la plus récente
             if (uniqueMap.has(c.time)) {
                 const existing = uniqueMap.get(c.time);
                 if (c.volume > existing.volume) {
@@ -540,7 +540,7 @@
     }
 
     // ============================================================
-    //  UPDATE REALTIME - CORRIGÉ SANS BOUGIES FANTÔMES
+    //  UPDATE REALTIME
     // ============================================================
     async function updateRealtime() {
         if (!mainSeries || !chartData.length || isLoading) return;
@@ -555,14 +555,11 @@
                 let ts = candle.time;
                 if (ts > 1e12) ts = Math.floor(ts / 1000);
 
-                // Calculer le timestamp aligné sur l'intervalle
                 const alignedTime = Math.floor(ts / interval) * interval;
                 
-                // Ne pas créer de bougies si le timestamp est trop ancien
                 const now = Math.floor(Date.now() / 1000);
-                const maxAge = interval * 2; // Max 2 intervalles de retard
+                const maxAge = interval * 2;
                 if (alignedTime < now - maxAge) {
-                    // Donnée trop ancienne, on l'ignore
                     return;
                 }
 
@@ -575,7 +572,6 @@
                     volume: candle.volume || 0
                 };
 
-                // Vérifier si la bougie est valide
                 if (isNaN(newCandle.open) || isNaN(newCandle.high) || 
                     isNaN(newCandle.low) || isNaN(newCandle.close) ||
                     newCandle.high < newCandle.low) {
@@ -584,14 +580,11 @@
 
                 const last = chartData[chartData.length - 1];
                 
-                // Si c'est une nouvelle bougie et qu'elle est différente de la dernière
                 if (newCandle.time > last.time && newCandle.time > lastCandleTime) {
-                    // Ajouter la nouvelle bougie
                     chartData.push(newCandle);
                     lastCandleTime = newCandle.time;
                     if (chartData.length > 300) chartData.shift();
                     
-                    // Mettre à jour tout le graphique
                     const candleData = chartData.map(c => ({
                         time: c.time,
                         open: c.open,
@@ -603,7 +596,6 @@
                     chart.timeScale().fitContent();
                     
                 } else if (newCandle.time === last.time) {
-                    // Mise à jour de la dernière bougie
                     chartData[chartData.length - 1] = newCandle;
                     mainSeries.update(newCandle);
                 }
@@ -613,7 +605,7 @@
                 updateStats(chartData);
             }
         } catch (err) {
-            // Silencieux pour éviter les erreurs en console
+            // Silencieux
         }
     }
 
@@ -639,10 +631,8 @@
 
         if (!chart || !chartData.length) return;
 
-        // Supprimer l'ancienne série
         chart.removeSeries(mainSeries);
 
-        // Créer la nouvelle série selon le style
         if (style === 'candlestick') {
             mainSeries = chart.addCandlestickSeries({
                 upColor: '#0ecb81',
@@ -712,30 +702,21 @@
     }
 
     // ============================================================
-    //  WEBSOCKET
+    //  REFRESH COMPLET
     // ============================================================
-    socket.on("connect", () => {
-        console.log("WebSocket connecté");
-    });
-
-    socket.on("market_update", (data) => {
-        if (data.last_price) {
-            currentPrice = data.last_price;
-            updatePriceDisplay();
-        }
-    });
-
-    socket.on("trade", () => {
-        loadPrice();
+    async function refreshAll() {
+        await loadPrice();
         if (isInitialized) {
-            updateRealtime();
+            await updateRealtime();
         }
-    });
+    }
 
     // ============================================================
     //  INIT
     // ============================================================
     async function init() {
+        console.log("🚀 Init chartcandle (sans WebSocket)");
+        
         await loadUserInfo();
         await loadPrice();
 
@@ -745,23 +726,20 @@
             }
         }, 300);
 
-        // Mise à jour toutes les 5 secondes
+        // 🔥 Mise à jour toutes les 10 secondes (au lieu de WebSocket)
         if (updateInterval) clearInterval(updateInterval);
         updateInterval = setInterval(() => {
             if (isInitialized) {
-                updateRealtime();
-                loadPrice();
+                refreshAll();
             }
-        }, 5000);
+        }, 50000);
     }
 
-    // Nettoyer l'intervalle si la page est fermée
     window.addEventListener('beforeunload', () => {
         if (updateInterval) clearInterval(updateInterval);
     });
 
     init();
 </script>
-
 </body>
 </html>
